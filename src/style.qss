@@ -4,7 +4,7 @@ QWidget {
     color: #1f2937;
 }
 
-QWidget#dashboard {
+QWidget#dashboard, QDialog#einrichtung {
     background: #ffffff;
 }
 
@@ -151,6 +151,11 @@ QLabel[rolle="status"][status="fertig"] {
     color: #137333;
 }
 
+QLabel[rolle="status"][ergebnis="NICHT_BESTANDEN"] {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
 QProgressBar {
     background: #e2e8f0;
     border: none;
@@ -198,4 +203,56 @@ QScrollBar::add-line, QScrollBar::sub-line {
 
 QScrollBar::add-page, QScrollBar::sub-page, QScrollArea::corner {
     background: transparent;
+}
+
+QLabel[rolle="fehler"] {
+    color: #b91c1c;
+}
+
+QLineEdit, QSpinBox, QDateEdit {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 8px;
+    selection-background-color: #3b82f6;
+    selection-color: #ffffff;
+}
+
+QLineEdit:focus, QSpinBox:focus, QDateEdit:focus {
+    border-color: #3b82f6;
+}
+
+QSpinBox::up-button, QSpinBox::down-button, QDateEdit::drop-down {
+    subcontrol-origin: border;
+    width: 20px;
+}
+
+QPushButton {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 16px;
+}
+
+QPushButton:hover {
+    background: #e7edf5;
+}
+
+QPushButton:default {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+QPushButton:disabled {
+    background: #f1f5f9;
+    border-color: #d8e0ea;
+    color: #94a3b8;
+}
+
+QCalendarWidget, QCalendarWidget QAbstractItemView {
+    background: #ffffff;
+    color: #1f2937;
+    selection-background-color: #3b82f6;
+    selection-color: #ffffff;
 }
