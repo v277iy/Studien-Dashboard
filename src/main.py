@@ -1,21 +1,16 @@
-"""Minimales Hello World für das Studien-Dashboard."""
-
 import sys
+from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow
+from PySide6.QtWidgets import QApplication
+
+from dashboard import DashboardFenster
 
 
 def main() -> int:
     app = QApplication(sys.argv)
+    app.setStyleSheet(Path(__file__).with_name("style.qss").read_text(encoding="utf-8"))
 
-    fenster = QMainWindow()
-    fenster.setWindowTitle("Studien-Dashboard")
-    fenster.resize(400, 240)
-
-    text = QLabel("Hello World")
-    text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    fenster.setCentralWidget(text)
+    fenster = DashboardFenster()
 
     fenster.show()
     return app.exec()

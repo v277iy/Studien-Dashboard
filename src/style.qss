@@ -1,0 +1,201 @@
+QWidget {
+    font-family: "Liberation Sans", "Arial", sans-serif;
+    font-size: 13px;
+    color: #1f2937;
+}
+
+QWidget#dashboard {
+    background: #ffffff;
+}
+
+QLabel {
+    background: transparent;
+    border: none;
+}
+
+QLabel[rolle="studiengang"] {
+    font-size: 27px;
+    font-weight: bold;
+}
+
+QLabel[rolle="titel"] {
+    font-size: 15px;
+    font-weight: bold;
+}
+
+QLabel[rolle="boardTitel"] {
+    font-size: 19px;
+    font-weight: bold;
+}
+
+QLabel[rolle="wert"] {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+QLabel[rolle="muted"], QLabel[rolle="klein"] {
+    color: #64748b;
+}
+
+QLabel[rolle="klein"], QLabel[rolle="prozent"] {
+    font-size: 11px;
+}
+
+QLabel[rolle="prozent"] {
+    color: #9a6700;
+    font-weight: bold;
+}
+
+QLabel[rolle="note"] {
+    font-weight: bold;
+}
+
+QFrame#kennzahlen {
+    background: #f8fafc;
+    border: 1px solid #d8e0ea;
+    border-radius: 12px;
+}
+
+QFrame#trenner {
+    background: #d8e0ea;
+}
+
+QLabel[rolle="ziel"], QLabel[rolle="status"] {
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 11px;
+    padding: 0 12px;
+}
+
+QLabel[rolle="ziel"] {
+    background: #fff4d6;
+    color: #9a6700;
+}
+
+QFrame#board {
+    background: #f5f7fa;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+}
+
+QScrollArea#boardScroll, QWidget#boardViewport, QWidget#boardInhalt {
+    background: #f5f7fa;
+    border: none;
+}
+
+QFrame#spaltenkopf {
+    border-radius: 10px;
+}
+
+QFrame#spaltenkopf[status="offen"] {
+    background: #e7edf5;
+}
+
+QFrame#spaltenkopf[status="aktiv"] {
+    background: #fff3cf;
+}
+
+QFrame#spaltenkopf[status="fertig"] {
+    background: #dcfce7;
+}
+
+QLabel[rolle="punkt"] {
+    border-radius: 7px;
+}
+
+QLabel[rolle="punkt"][status="offen"] {
+    background: #94a3b8;
+}
+
+QLabel[rolle="punkt"][status="aktiv"] {
+    background: #f59e0b;
+}
+
+QLabel[rolle="punkt"][status="fertig"] {
+    background: #22c55e;
+}
+
+QLabel[rolle="anzahl"] {
+    background: #ffffff;
+    border-radius: 11px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+QFrame#modulkarte {
+    background: #ffffff;
+    border-radius: 10px;
+    border-left: 5px solid #94a3b8;
+}
+
+QFrame#modulkarte[status="aktiv"] {
+    border-left-color: #f59e0b;
+}
+
+QFrame#modulkarte[status="fertig"] {
+    border-left-color: #22c55e;
+}
+
+QLabel[rolle="status"][status="offen"] {
+    background: #edf1f6;
+    color: #64748b;
+}
+
+QLabel[rolle="status"][status="aktiv"] {
+    background: #fff3cf;
+    color: #9a6700;
+}
+
+QLabel[rolle="status"][status="fertig"] {
+    background: #dcfce7;
+    color: #137333;
+}
+
+QProgressBar {
+    background: #e2e8f0;
+    border: none;
+    border-radius: 4px;
+}
+
+QProgressBar::chunk {
+    background: #3b82f6;
+    border-radius: 4px;
+}
+
+QProgressBar[status="aktiv"]::chunk {
+    background: #f59e0b;
+}
+
+QScrollBar:vertical {
+    background: #dce3eb;
+    width: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar:horizontal {
+    background: #dce3eb;
+    height: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle {
+    background: #9aa9bb;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    min-height: 30px;
+}
+
+QScrollBar::handle:horizontal {
+    min-width: 30px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    width: 0;
+    height: 0;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page, QScrollArea::corner {
+    background: transparent;
+}
