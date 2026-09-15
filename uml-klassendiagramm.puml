@@ -1,0 +1,83 @@
+@startuml
+title UML-Klassendiagramm des Studien-Dashboards
+
+hide circle
+skinparam classAttributeIconSize 0
+
+class Studiengang <<Entity>> {
+  - bezeichnung: String
+  - startdatum: Date
+  - regelstudienzeit: Integer
+  - gesamtECTS: Integer
+  - zielnote: Decimal
+  + ectsFortschritt(): Prozent
+  + notendurchschnitt(): Decimal [0..1]
+  + verbleibendeSemester(): Integer
+}
+
+class Semester <<Entity>> {
+  - nummer: Integer
+  - beginn: Date
+  - ende: Date
+  + erreichteECTS(): Integer
+}
+
+class Modul <<Entity>> {
+  - modulcode: String
+  - bezeichnung: String
+  - ects: Integer
+  - status: Bearbeitungsstatus
+  + fortschritt(): Prozent
+}
+
+abstract class "Prüfungsleistung" as Pruefungsleistung <<Entity>> {
+  - termin: Date [0..1]
+  - note: Decimal [0..1]
+  - ergebnis: Prüfungsergebnis [0..1]
+  {abstract} + fortschritt(): Prozent
+  + istBestanden(): Boolean
+}
+
+abstract class "Einteilige Prüfungsleistung" as EinteiligePruefungsleistung <<Entity>> {
+  + fortschritt(): Prozent
+}
+
+abstract class "Mehrteilige Prüfungsleistung" as MehrteiligePruefungsleistung <<Entity>> {
+  - anzahlAbschnitte: Integer
+  - aktuellerAbschnitt: Integer [0..1]
+  + fortschritt(): Prozent
+}
+
+class Klausur <<Entity>>
+class Fallstudie <<Entity>>
+class Portfolio <<Entity>>
+class "Projektpräsentation" as Projektpraesentation <<Entity>>
+
+enum "Prüfungsergebnis" as Pruefungsergebnis {
+  AUSSTEHEND
+  BESTANDEN
+  NICHT_BESTANDEN
+}
+
+enum Bearbeitungsstatus {
+  NOCH_ZU_TUN
+  IN_BEARBEITUNG
+  FERTIG
+}
+
+' Komposition und Aggregation mit Multiplizitäten
+Studiengang "1" *-right- "1..*" Semester : besteht aus
+Semester "1" o-right- "0..*" Modul : ordnet zu
+Modul "1" *-- "1" Pruefungsleistung : besitzt
+
+' Vererbung der Prüfungsformen
+Pruefungsleistung <|-- EinteiligePruefungsleistung
+Pruefungsleistung <|-- MehrteiligePruefungsleistung
+
+' Vererbung der konkreten Prüfungsarten
+EinteiligePruefungsleistung <|-- Klausur
+EinteiligePruefungsleistung <|-- Fallstudie
+MehrteiligePruefungsleistung <|-- Portfolio
+MehrteiligePruefungsleistung <|-- Projektpraesentation
+
+@enduml
