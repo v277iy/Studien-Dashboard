@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <title>Skizze des Studien-Dashboards</title>
+  <desc>Lokale Desktopanwendung mit ausklappbarer Kursliste, Kennzahlen in zwei Spalten und einem scrollbaren Kanban-Board.</desc>
+
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#172033" flood-opacity="0.14"/>
+    </filter>
+    <clipPath id="boardClip">
+      <rect x="286" y="347" width="1094" height="466" rx="0"/>
+    </clipPath>
+    <style>
+      .ui { font-family: "Liberation Sans", Arial, sans-serif; fill: #1f2937; }
+      .muted { font-family: "Liberation Sans", Arial, sans-serif; fill: #64748b; }
+      .white { font-family: "Liberation Sans", Arial, sans-serif; fill: #ffffff; }
+      .label { font-size: 15px; font-weight: 700; }
+      .small { font-size: 13px; }
+      .tiny { font-size: 11px; }
+      .value { font-size: 25px; font-weight: 700; }
+      .card-title { font-size: 15px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <!-- Hintergrund und Fenster -->
+  <rect width="1440" height="900" fill="#e8edf4"/>
+  <rect x="15" y="15" width="1410" height="870" rx="18" fill="#ffffff" filter="url(#shadow)"/>
+  <path d="M33 15 H1407 A18 18 0 0 1 1425 33 V58 H15 V33 A18 18 0 0 1 33 15 Z" fill="#273449"/>
+  <circle cx="39" cy="36" r="6" fill="#fb7185"/>
+  <circle cx="59" cy="36" r="6" fill="#fbbf24"/>
+  <circle cx="79" cy="36" r="6" fill="#4ade80"/>
+  <text x="720" y="42" text-anchor="middle" class="white" font-size="14" font-weight="700">Studien-Dashboard</text>
+
+  <!-- Linke, ein- und ausklappbare Navigation -->
+  <rect x="15" y="58" width="255" height="827" fill="#f8fafc"/>
+  <line x1="270" y1="58" x2="270" y2="885" stroke="#d8e0ea"/>
+
+  <rect x="32" y="76" width="42" height="42" rx="8" fill="#e3eaf4"/>
+  <line x1="43" y1="88" x2="63" y2="88" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="43" y1="97" x2="63" y2="97" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="43" y1="106" x2="63" y2="106" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="87" y="94" class="ui" font-size="18" font-weight="700">Alle Kurse</text>
+  <text x="87" y="111" class="muted tiny">Menü ein-/ausklappbar</text>
+
+  <rect x="32" y="135" width="221" height="38" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <circle cx="48" cy="154" r="6" fill="none" stroke="#64748b" stroke-width="1.6"/>
+  <line x1="52.5" y1="158.5" x2="57.5" y2="163.5" stroke="#64748b" stroke-width="1.6"/>
+  <text x="67" y="159" class="muted small">Kurs suchen …</text>
+
+  <text x="32" y="204" class="muted tiny" font-weight="700" letter-spacing="1">MODULLISTE</text>
+
+  <!-- Navigationseinträge -->
+  <g>
+    <rect x="25" y="218" width="232" height="51" rx="8" fill="#e9f0fb"/>
+    <rect x="25" y="218" width="4" height="51" rx="2" fill="#3b82f6"/>
+    <circle cx="43" cy="243" r="5" fill="#f59e0b"/>
+    <text x="57" y="241" class="ui small" font-weight="700">OOP mit Python</text>
+    <text x="57" y="258" class="muted tiny">In Bearbeitung</text>
+  </g>
+  <g>
+    <rect x="25" y="275" width="232" height="51" rx="8" fill="#f8fafc"/>
+    <circle cx="43" cy="300" r="5" fill="#f59e0b"/>
+    <text x="57" y="298" class="ui small" font-weight="700">Datenbanken</text>
+    <text x="57" y="315" class="muted tiny">In Bearbeitung</text>
+  </g>
+  <g>
+    <rect x="25" y="332" width="232" height="51" rx="8" fill="#f8fafc"/>
+    <circle cx="43" cy="357" r="5" fill="#94a3b8"/>
+    <text x="57" y="355" class="ui small" font-weight="700">Mathematik II</text>
+    <text x="57" y="372" class="muted tiny">Noch zu tun</text>
+  </g>
+  <g>
+    <rect x="25" y="389" width="232" height="51" rx="8" fill="#f8fafc"/>
+    <circle cx="43" cy="414" r="5" fill="#94a3b8"/>
+    <text x="57" y="412" class="ui small" font-weight="700">Software Engineering</text>
+    <text x="57" y="429" class="muted tiny">Noch zu tun</text>
+  </g>
+  <g>
+    <rect x="25" y="446" width="232" height="51" rx="8" fill="#f8fafc"/>
+    <circle cx="43" cy="471" r="5" fill="#22c55e"/>
+    <text x="57" y="469" class="ui small" font-weight="700">Programmierung I</text>
+    <text x="57" y="486" class="muted tiny">Fertig</text>
+  </g>
+  <g>
+    <rect x="25" y="503" width="232" height="51" rx="8" fill="#f8fafc"/>
+    <circle cx="43" cy="528" r="5" fill="#22c55e"/>
+    <text x="57" y="526" class="ui small" font-weight="700">Mathematik I</text>
+    <text x="57" y="543" class="muted tiny">Fertig</text>
+  </g>
+  <g>
+    <rect x="25" y="560" width="232" height="51" rx="8" fill="#f8fafc"/>
+    <circle cx="43" cy="585" r="5" fill="#22c55e"/>
+    <text x="57" y="583" class="ui small" font-weight="700">Wissenschaftliches Arbeiten</text>
+    <text x="57" y="600" class="muted tiny">Fertig</text>
+  </g>
+
+  <line x1="32" y1="824" x2="253" y2="824" stroke="#d8e0ea"/>
+  <rect x="32" y="838" width="221" height="31" rx="7" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="4 3"/>
+  <text x="142.5" y="858" text-anchor="middle" class="muted small">＋ Modul hinzufügen</text>
+
+  <!-- Zentraler Titel -->
+  <text x="847" y="91" text-anchor="middle" class="ui" font-size="27" font-weight="700">B.Sc. Informatik</text>
+  <text x="847" y="113" text-anchor="middle" class="muted small">6 Semester · 180 ECTS · Zielnote 2,0</text>
+
+  <!-- Kennzahlen: zwei Spalten -->
+  <rect x="296" y="132" width="536" height="126" rx="12" fill="#f8fafc" stroke="#d8e0ea"/>
+  <text x="317" y="158" class="ui label">Studienfortschritt</text>
+  <line x1="563" y1="150" x2="563" y2="240" stroke="#d8e0ea"/>
+
+  <text x="317" y="185" class="muted small">Erreichte ECTS</text>
+  <text x="317" y="215" class="ui value">95 / 180</text>
+  <rect x="317" y="228" width="215" height="9" rx="4.5" fill="#dce5ef"/>
+  <rect x="317" y="228" width="113" height="9" rx="4.5" fill="#3b82f6"/>
+  <text x="530" y="237" text-anchor="end" class="muted tiny">53 %</text>
+
+  <text x="588" y="185" class="muted small">Aktuelle Durchschnittsnote</text>
+  <text x="588" y="216" class="ui value">2,1</text>
+  <rect x="653" y="197" width="84" height="23" rx="11.5" fill="#fff4d6"/>
+  <text x="695" y="213" text-anchor="middle" fill="#9a6700" font-family="Liberation Sans, Arial" font-size="11" font-weight="700">Ziel: 2,0</text>
+  <text x="588" y="238" class="muted tiny">85 ECTS noch offen</text>
+
+  <rect x="852" y="132" width="546" height="126" rx="12" fill="#f8fafc" stroke="#d8e0ea"/>
+  <text x="873" y="158" class="ui label">Zeitplan</text>
+  <line x1="1123" y1="150" x2="1123" y2="240" stroke="#d8e0ea"/>
+
+  <text x="873" y="185" class="muted small">Aktuelles Datum</text>
+  <text x="873" y="215" class="ui value">01.09.2026</text>
+  <text x="873" y="238" class="muted tiny">Aktuelles Semester: 3</text>
+
+  <text x="1148" y="185" class="muted small">Geplantes Enddatum</text>
+  <text x="1148" y="215" class="ui value">01.09.2027</text>
+  <text x="1148" y="238" class="muted tiny">Noch 3 Semester</text>
+
+  <!-- Kanban-Bereich -->
+  <text x="296" y="295" class="ui" font-size="19" font-weight="700">Module im Überblick</text>
+  <text x="1398" y="294" text-anchor="end" class="muted small">Karten anklicken, um Details zu bearbeiten</text>
+  <rect x="286" y="310" width="1112" height="541" rx="12" fill="#f5f7fa" stroke="#cbd5e1"/>
+
+  <!-- Spaltenköpfe -->
+  <g>
+    <rect x="306" y="330" width="337" height="48" rx="10" fill="#e7edf5"/>
+    <circle cx="330" cy="354" r="7" fill="#94a3b8"/>
+    <text x="347" y="359" class="ui label">Noch zu tun</text>
+    <rect x="601" y="342" width="25" height="23" rx="11.5" fill="#ffffff"/>
+    <text x="613.5" y="358" text-anchor="middle" class="ui tiny" font-weight="700">3</text>
+  </g>
+  <g>
+    <rect x="663" y="330" width="337" height="48" rx="10" fill="#fff3cf"/>
+    <circle cx="687" cy="354" r="7" fill="#f59e0b"/>
+    <text x="704" y="359" class="ui label">In Bearbeitung</text>
+    <rect x="958" y="342" width="25" height="23" rx="11.5" fill="#ffffff"/>
+    <text x="970.5" y="358" text-anchor="middle" class="ui tiny" font-weight="700">2</text>
+  </g>
+  <g>
+    <rect x="1020" y="330" width="337" height="48" rx="10" fill="#dcfce7"/>
+    <circle cx="1044" cy="354" r="7" fill="#22c55e"/>
+    <text x="1061" y="359" class="ui label">Fertig</text>
+    <rect x="1315" y="342" width="25" height="23" rx="11.5" fill="#ffffff"/>
+    <text x="1327.5" y="358" text-anchor="middle" class="ui tiny" font-weight="700">3</text>
+  </g>
+
+  <!-- Karten, durch Board geclippt -->
+  <g clip-path="url(#boardClip)">
+    <!-- Noch zu tun -->
+    <g filter="url(#shadow)">
+      <rect x="306" y="394" width="337" height="110" rx="10" fill="#ffffff"/>
+      <rect x="306" y="394" width="5" height="110" rx="2.5" fill="#94a3b8"/>
+    </g>
+    <text x="325" y="419" class="ui card-title">Mathematik II</text>
+    <text x="625" y="419" text-anchor="end" class="muted small">⋯</text>
+    <text x="325" y="442" class="muted small">Klausur · 5 ECTS</text>
+    <rect x="325" y="458" width="111" height="23" rx="11" fill="#edf1f6"/>
+    <text x="380.5" y="474" text-anchor="middle" class="muted tiny" font-weight="700">NICHT BEGONNEN</text>
+    <text x="625" y="475" text-anchor="end" class="muted tiny">Termin: 18.07.</text>
+
+    <g filter="url(#shadow)">
+      <rect x="306" y="520" width="337" height="121" rx="10" fill="#ffffff"/>
+      <rect x="306" y="520" width="5" height="121" rx="2.5" fill="#94a3b8"/>
+    </g>
+    <text x="325" y="545" class="ui card-title">Software Engineering</text>
+    <text x="625" y="545" text-anchor="end" class="muted small">⋯</text>
+    <text x="325" y="568" class="muted small">Portfolio · 5 ECTS</text>
+    <text x="325" y="593" class="muted tiny">3 Abschnitte · noch nicht begonnen</text>
+    <rect x="325" y="603" width="286" height="8" rx="4" fill="#e2e8f0"/>
+
+    <g filter="url(#shadow)">
+      <rect x="306" y="657" width="337" height="110" rx="10" fill="#ffffff"/>
+      <rect x="306" y="657" width="5" height="110" rx="2.5" fill="#94a3b8"/>
+    </g>
+    <text x="325" y="682" class="ui card-title">Statistik</text>
+    <text x="625" y="682" text-anchor="end" class="muted small">⋯</text>
+    <text x="325" y="705" class="muted small">Klausur · 5 ECTS</text>
+    <rect x="325" y="721" width="111" height="23" rx="11" fill="#edf1f6"/>
+    <text x="380.5" y="737" text-anchor="middle" class="muted tiny" font-weight="700">NICHT BEGONNEN</text>
+
+    <!-- In Bearbeitung -->
+    <g filter="url(#shadow)">
+      <rect x="663" y="394" width="337" height="126" rx="10" fill="#ffffff"/>
+      <rect x="663" y="394" width="5" height="126" rx="2.5" fill="#f59e0b"/>
+    </g>
+    <text x="682" y="419" class="ui card-title">OOP mit Python</text>
+    <text x="982" y="419" text-anchor="end" class="muted small">⋯</text>
+    <text x="682" y="442" class="muted small">Portfolio · 5 ECTS</text>
+    <text x="682" y="469" class="muted tiny">Aktueller Abschnitt: 2 von 4</text>
+    <rect x="682" y="479" width="286" height="8" rx="4" fill="#e2e8f0"/>
+    <rect x="682" y="479" width="143" height="8" rx="4" fill="#f59e0b"/>
+    <text x="968" y="505" text-anchor="end" fill="#9a6700" font-family="Liberation Sans, Arial" font-size="11" font-weight="700">50 %</text>
+
+    <g filter="url(#shadow)">
+      <rect x="663" y="536" width="337" height="126" rx="10" fill="#ffffff"/>
+      <rect x="663" y="536" width="5" height="126" rx="2.5" fill="#f59e0b"/>
+    </g>
+    <text x="682" y="561" class="ui card-title">Datenbanken</text>
+    <text x="982" y="561" text-anchor="end" class="muted small">⋯</text>
+    <text x="682" y="584" class="muted small">Klausur · 5 ECTS</text>
+    <rect x="682" y="603" width="139" height="23" rx="11.5" fill="#fff3cf"/>
+    <text x="751.5" y="619" text-anchor="middle" fill="#9a6700" font-family="Liberation Sans, Arial" font-size="11" font-weight="700">IN VORBEREITUNG</text>
+    <text x="968" y="619" text-anchor="end" class="muted tiny">Prüfung: 04.07.</text>
+
+    <!-- Fertig -->
+    <g filter="url(#shadow)">
+      <rect x="1020" y="394" width="337" height="110" rx="10" fill="#ffffff"/>
+      <rect x="1020" y="394" width="5" height="110" rx="2.5" fill="#22c55e"/>
+    </g>
+    <text x="1039" y="419" class="ui card-title">Programmierung I</text>
+    <text x="1339" y="419" text-anchor="end" class="muted small">⋯</text>
+    <text x="1039" y="442" class="muted small">Klausur · 5 ECTS</text>
+    <rect x="1039" y="458" width="75" height="23" rx="11" fill="#dcfce7"/>
+    <text x="1076.5" y="474" text-anchor="middle" fill="#137333" font-family="Liberation Sans, Arial" font-size="11" font-weight="700">BESTANDEN</text>
+    <text x="1339" y="475" text-anchor="end" class="ui small" font-weight="700">Note 1,7</text>
+
+    <g filter="url(#shadow)">
+      <rect x="1020" y="520" width="337" height="110" rx="10" fill="#ffffff"/>
+      <rect x="1020" y="520" width="5" height="110" rx="2.5" fill="#22c55e"/>
+    </g>
+    <text x="1039" y="545" class="ui card-title">Mathematik I</text>
+    <text x="1339" y="545" text-anchor="end" class="muted small">⋯</text>
+    <text x="1039" y="568" class="muted small">Klausur · 5 ECTS</text>
+    <rect x="1039" y="584" width="75" height="23" rx="11" fill="#dcfce7"/>
+    <text x="1076.5" y="600" text-anchor="middle" fill="#137333" font-family="Liberation Sans, Arial" font-size="11" font-weight="700">BESTANDEN</text>
+    <text x="1339" y="601" text-anchor="end" class="ui small" font-weight="700">Note 2,3</text>
+
+    <g filter="url(#shadow)">
+      <rect x="1020" y="646" width="337" height="110" rx="10" fill="#ffffff"/>
+      <rect x="1020" y="646" width="5" height="110" rx="2.5" fill="#22c55e"/>
+    </g>
+    <text x="1039" y="671" class="ui card-title">Wissenschaftliches Arbeiten</text>
+    <text x="1339" y="671" text-anchor="end" class="muted small">⋯</text>
+    <text x="1039" y="694" class="muted small">Fallstudie · 5 ECTS</text>
+    <rect x="1039" y="710" width="75" height="23" rx="11" fill="#dcfce7"/>
+    <text x="1076.5" y="726" text-anchor="middle" fill="#137333" font-family="Liberation Sans, Arial" font-size="11" font-weight="700">BESTANDEN</text>
+    <text x="1339" y="727" text-anchor="end" class="ui small" font-weight="700">Note 2,0</text>
+  </g>
+
+  <!-- Scrollbars des Kanban-Boards -->
+  <rect x="1374" y="394" width="8" height="407" rx="4" fill="#dce3eb"/>
+  <rect x="1374" y="398" width="8" height="146" rx="4" fill="#9aa9bb"/>
+  <rect x="306" y="821" width="1051" height="8" rx="4" fill="#dce3eb"/>
+  <rect x="310" y="821" width="680" height="8" rx="4" fill="#9aa9bb"/>
+  <text x="1360" y="845" text-anchor="end" class="muted tiny">horizontal und vertikal scrollbar, falls weitere Karten vorhanden sind</text>
+</svg>
