@@ -36,10 +36,11 @@ def main() -> int:
     app.setApplicationName("Studien-Dashboard")
     app.setStyleSheet(Path(__file__).with_name("style.qss").read_text(encoding="utf-8"))
 
-    studiengang = studiengang_oeffnen(studiengang_pfad())
+    pfad = studiengang_pfad()
+    studiengang = studiengang_oeffnen(pfad)
     if studiengang is None:
         return 0
-    fenster = DashboardFenster(studiengang)
+    fenster = DashboardFenster(studiengang, pfad)
 
     fenster.show()
     return app.exec()

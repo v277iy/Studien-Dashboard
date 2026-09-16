@@ -4,7 +4,7 @@ QWidget {
     color: #1f2937;
 }
 
-QWidget#dashboard, QDialog#einrichtung {
+QWidget#hauptfenster, QWidget#dashboard, QDialog#einrichtung, QDialog#modulDialog {
     background: #ffffff;
 }
 
@@ -209,7 +209,7 @@ QLabel[rolle="fehler"] {
     color: #b91c1c;
 }
 
-QLineEdit, QSpinBox, QDateEdit {
+QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QComboBox {
     background: #ffffff;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
@@ -218,11 +218,13 @@ QLineEdit, QSpinBox, QDateEdit {
     selection-color: #ffffff;
 }
 
-QLineEdit:focus, QSpinBox:focus, QDateEdit:focus {
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QComboBox:focus {
     border-color: #3b82f6;
 }
 
-QSpinBox::up-button, QSpinBox::down-button, QDateEdit::drop-down {
+QSpinBox::up-button, QSpinBox::down-button,
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button,
+QDateEdit::drop-down, QComboBox::drop-down {
     subcontrol-origin: border;
     width: 20px;
 }
@@ -255,4 +257,83 @@ QCalendarWidget, QCalendarWidget QAbstractItemView {
     color: #1f2937;
     selection-background-color: #3b82f6;
     selection-color: #ffffff;
+}
+
+QComboBox QAbstractItemView {
+    background: #ffffff;
+    color: #1f2937;
+    selection-background-color: #e9f0fb;
+    selection-color: #1f2937;
+}
+
+QFrame#modulleiste {
+    background: #f8fafc;
+    border-right: 1px solid #d8e0ea;
+}
+
+QToolButton#listenSchalter {
+    background: #e3eaf4;
+    color: #334155;
+    border: none;
+    border-radius: 8px;
+    font-size: 24px;
+}
+
+QToolButton#listenSchalter:hover {
+    background: #d8e0ea;
+}
+
+QToolButton#listenSchalter:focus {
+    border: 1px solid #3b82f6;
+}
+
+QListWidget#modulliste {
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+QListWidget#modulliste::item {
+    border-left: 3px solid transparent;
+    border-radius: 8px;
+}
+
+QListWidget#modulliste::item:selected {
+    background: #e9f0fb;
+    border-left-color: #3b82f6;
+}
+
+QListWidget#modulliste::item:hover {
+    background: #edf1f6;
+}
+
+QLabel[rolle="listenTitel"] {
+    font-weight: bold;
+}
+
+QFrame#listenPunkt {
+    border-radius: 5px;
+}
+
+QFrame#listenPunkt[status="offen"] {
+    background: #94a3b8;
+}
+
+QFrame#listenPunkt[status="aktiv"] {
+    background: #f59e0b;
+}
+
+QFrame#listenPunkt[status="fertig"] {
+    background: #22c55e;
+}
+
+QPushButton#modulHinzufuegen {
+    background: #ffffff;
+    border-style: dashed;
+    color: #64748b;
+}
+
+QPushButton#modulHinzufuegen:hover {
+    background: #e9f0fb;
+    color: #1f2937;
 }

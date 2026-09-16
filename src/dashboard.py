@@ -1,8 +1,10 @@
 from datetime import date
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
+    QDialog,
     QFrame,
     QGraphicsDropShadowEffect,
     QGridLayout,
@@ -16,6 +18,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from modul_dialog import ModulDialog
+from modulliste import Modulleiste
 from modelle import (
     Bearbeitungsstatus,
     MehrteiligePruefungsleistung,
@@ -132,8 +136,11 @@ def modulkarte(modul: Modul, status: str) -> QFrame:
     karte.setProperty("status", status)
     karte.setToolTip(modul.modulcode)
     pruefung = modul.pruefungsleistung
-    mehrteilig = isinstance(pruefung, MehrteiligePruefungsleistung) and status != "fertig"
-    karte.setMinimumHeight(150 if mehrteilig else 110)
+    fortschritt_anzeigen = (
+        isinstance(pruefung, MehrteiligePruefungsleistung)
+        and modul.status == Bearbeitungsstatus.IN_BEARBEITUNG
+    )
+    karte.setMinimumHeight(150 if fortschritt_anzeigen else 110)
     karte.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
     schatten = QGraphicsDropShadowEffect(karte)
@@ -152,7 +159,7 @@ def modulkarte(modul: Modul, status: str) -> QFrame:
     pruefungsart = type(pruefung).__name__.replace("Projektpraesentation", "Projektpräsentation")
     layout.addWidget(label(f"{pruefungsart} · {modul.ects:g} ECTS", "muted"))
 
-    if mehrteilig:
+    if fortschritt_anzeigen:
         abschnitt = pruefung.aktueller_abschnitt or "—"
         layout.addWidget(label(
             f"Aktueller Abschnitt: {abschnitt} von {pruefung.anzahl_abschnitte}", "klein"
@@ -258,48 +265,82 @@ def kanbanboard(module: list[Modul]) -> QFrame:
     return board
 
 
+def dashboard_inhalt(studiengang: Studiengang) -> QWidget:
+    inhalt = QWidget()
+    inhalt.setObjectName("dashboard")
+    layout = QVBoxLayout(inhalt)
+    layout.setContentsMargins(26, 12, 26, 24)
+    layout.setSpacing(18)
+
+    kopf = QVBoxLayout()
+    kopf.setSpacing(2)
+    titel = label(studiengang.bezeichnung, "studiengang")
+    titel.setWordWrap(True)
+    titel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+    titel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    kopf.addWidget(titel)
+    kurzinfo = f"{studiengang.regelstudienzeit} Semester · {studiengang.gesamt_ects} ECTS"
+    if studiengang.zielnote is not None:
+        kurzinfo += f" · Zielnote {dezimal(studiengang.zielnote)}"
+    untertitel = label(kurzinfo, "muted")
+    untertitel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    kopf.addWidget(untertitel)
+    layout.addLayout(kopf)
+
+    kennzahlen = QHBoxLayout()
+    kennzahlen.setSpacing(20)
+    kennzahlen.addWidget(studienfortschritt(studiengang), 1)
+    kennzahlen.addWidget(zeitplan(studiengang), 1)
+    layout.addLayout(kennzahlen)
+
+    board = QVBoxLayout()
+    board.setSpacing(12)
+    ueberschrift = QHBoxLayout()
+    ueberschrift.addWidget(label("Module im Überblick", "boardTitel"))
+    ueberschrift.addStretch()
+    ueberschrift.addWidget(label(f"{len(studiengang.module)} Module", "muted"))
+    board.addLayout(ueberschrift)
+    board.addWidget(kanbanboard(studiengang.module), 1)
+    layout.addLayout(board, 1)
+    return inhalt
+
+
 class DashboardFenster(QMainWindow):
-    def __init__(self, studiengang: Studiengang) -> None:
+    def __init__(self, studiengang: Studiengang, pfad: Path) -> None:
         super().__init__()
         self.studiengang = studiengang
+        self.pfad = pfad
         self.setWindowTitle("Studien-Dashboard")
-        self.resize(1160, 827)
+        self.resize(1400, 827)
         self.setMinimumSize(960, 600)
 
         zentral = QWidget()
-        zentral.setObjectName("dashboard")
+        zentral.setObjectName("hauptfenster")
         self.setCentralWidget(zentral)
-        layout = QVBoxLayout(zentral)
-        layout.setContentsMargins(26, 12, 26, 24)
-        layout.setSpacing(18)
+        self.hauptlayout = QHBoxLayout(zentral)
+        self.hauptlayout.setContentsMargins(0, 0, 0, 0)
+        self.hauptlayout.setSpacing(0)
+        self.modulleiste = Modulleiste()
+        self.modulleiste.neues_modul.connect(self.modul_anlegen)
+        self.hauptlayout.addWidget(self.modulleiste)
+        self.inhalt: QWidget | None = None
+        self.aktualisieren()
 
-        kopf = QVBoxLayout()
-        kopf.setSpacing(2)
-        titel = label(studiengang.bezeichnung, "studiengang")
-        titel.setWordWrap(True)
-        titel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        titel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        kopf.addWidget(titel)
-        kurzinfo = f"{studiengang.regelstudienzeit} Semester · {studiengang.gesamt_ects} ECTS"
-        if studiengang.zielnote is not None:
-            kurzinfo += f" · Zielnote {dezimal(studiengang.zielnote)}"
-        untertitel = label(kurzinfo, "muted")
-        untertitel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        kopf.addWidget(untertitel)
-        layout.addLayout(kopf)
+    def aktualisieren(self) -> None:
+        self.modulleiste.anzeigen(self.studiengang.module)
+        neuer_inhalt = dashboard_inhalt(self.studiengang)
+        if self.inhalt is None:
+            self.hauptlayout.addWidget(neuer_inhalt, 1)
+        else:
+            self.hauptlayout.replaceWidget(self.inhalt, neuer_inhalt)
+            self.inhalt.setParent(None)
+            self.inhalt.deleteLater()
+        self.inhalt = neuer_inhalt
 
-        kennzahlen = QHBoxLayout()
-        kennzahlen.setSpacing(20)
-        kennzahlen.addWidget(studienfortschritt(studiengang), 1)
-        kennzahlen.addWidget(zeitplan(studiengang), 1)
-        layout.addLayout(kennzahlen)
-
-        board = QVBoxLayout()
-        board.setSpacing(12)
-        ueberschrift = QHBoxLayout()
-        ueberschrift.addWidget(label("Module im Überblick", "boardTitel"))
-        ueberschrift.addStretch()
-        ueberschrift.addWidget(label(f"{len(studiengang.module)} Module", "muted"))
-        board.addLayout(ueberschrift)
-        board.addWidget(kanbanboard(studiengang.module), 1)
-        layout.addLayout(board, 1)
+    def modul_anlegen(self) -> None:
+        dialog = ModulDialog(self.studiengang, self.pfad, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.studiengang = dialog.studiengang
+            self.aktualisieren()
+            self.modulleiste.auswaehlen(dialog.modul.modulcode)
+        dialog.deleteLater()

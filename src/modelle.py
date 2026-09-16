@@ -97,6 +97,17 @@ class Studiengang:
     def module(self) -> list[Modul]:
         return [modul for semester in self.semester for modul in semester.module]
 
+    def modul_hinzufuegen(self, modul: Modul, semesternummer: int) -> None:
+        if type(semesternummer) is not int or not 1 <= semesternummer <= self.regelstudienzeit:
+            raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")
+        if any(m.modulcode == modul.modulcode for m in self.module):
+            raise ValueError("Dieser Modulcode ist bereits vergeben.")
+        semester = next((s for s in self.semester if s.nummer == semesternummer), None)
+        if semester is None:
+            semester = Semester(semesternummer)
+            self.semester.append(semester)
+        semester.module.append(modul)
+
     def erreichte_ects(self) -> float:
         return sum(m.ects for m in self.module if m.pruefungsleistung.ist_bestanden())
 
