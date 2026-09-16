@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from PySide6.QtCore import QDate, Qt
+from PySide6.QtCore import QDate, QLocale, Qt
 from PySide6.QtWidgets import (
     QDateEdit,
     QDialog,
     QDialogButtonBox,
+    QDoubleSpinBox,
     QFormLayout,
     QLabel,
     QLineEdit,
@@ -23,7 +24,7 @@ class StudiengangDialog(QDialog):
         self.studiengang: Studiengang | None = None
         self.setObjectName("einrichtung")
         self.setWindowTitle("Studiengang anlegen")
-        self.resize(540, 360)
+        self.resize(540, 400)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(28, 24, 28, 24)
@@ -51,6 +52,13 @@ class StudiengangDialog(QDialog):
         self.ects.setRange(1, 10000)
         self.ects.setValue(180)
         formular.addRow("ECTS-Punkte", self.ects)
+        self.zielnote = QDoubleSpinBox()
+        self.zielnote.setLocale(QLocale("de_DE"))
+        self.zielnote.setDecimals(1)
+        self.zielnote.setRange(1.0, 5.0)
+        self.zielnote.setSingleStep(0.1)
+        self.zielnote.setValue(2.0)
+        formular.addRow("Zielnote", self.zielnote)
         self.enddatum = QDateEdit(QDate.currentDate().addYears(3))
         self.enddatum.setDisplayFormat("dd.MM.yyyy")
         self.enddatum.setCalendarPopup(True)
@@ -86,6 +94,7 @@ class StudiengangDialog(QDialog):
             bezeichnung=self.name.text().strip(),
             regelstudienzeit=self.semester.value(),
             gesamt_ects=self.ects.value(),
+            zielnote=self.zielnote.value(),
             enddatum=self.enddatum.date().toPython(),
             semester=[Semester(nummer) for nummer in range(1, self.semester.value() + 1)],
         )
