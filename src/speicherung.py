@@ -2,6 +2,7 @@ import json
 import shutil
 from dataclasses import asdict
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -54,8 +55,15 @@ def ganzzahl(wert, feld: str) -> int:
 
 
 def zahl(wert, feld: str) -> float:
-    if type(wert) not in (int, float) or not 0 < wert <= 2**31 - 1:
+    if (
+        type(wert) not in (int, float, Decimal)
+        or isinstance(wert, Decimal) and not wert.is_finite()
+        or not 0 < wert <= 2**31 - 1
+    ):
         raise ValueError(f"{feld}: Positive Zahl bis 2147483647 erwartet.")
+    wert = float(wert)
+    if wert == 0:
+        raise ValueError(f"{feld}: Zahl ist zu klein.")
     return wert
 
 
@@ -73,13 +81,18 @@ def datum(wert, feld: str, optional: bool = False) -> date | None:
         raise ValueError(f"{feld}: Datum muss JJJJ-MM-TT entsprechen.") from None
 
 
-def note(wert) -> float | None:
+def note(wert) -> Decimal | None:
     if wert is None:
         return None
-    wert = zahl(wert, "Note")
-    if not 1 <= wert <= 5:
+    if type(wert) not in (str, int, float, Decimal):
+        raise ValueError("Ungültige Note.")
+    try:
+        ergebnis = Decimal(str(wert))
+    except InvalidOperation:
+        raise ValueError("Ungültige Note.") from None
+    if not ergebnis.is_finite() or not 1 <= ergebnis <= 5:
         raise ValueError("Note muss zwischen 1 und 5 liegen.")
-    return wert
+    return ergebnis
 
 
 def pruefung_aus_dict(daten) -> Pruefungsleistung:
@@ -137,6 +150,7 @@ def studiengang_aus_dict(daten) -> Studiengang:
         regelstudienzeit=ganzzahl(daten.get("regelstudienzeit"), "Anzahl Semester"),
         gesamt_ects=ganzzahl(daten.get("gesamt_ects"), "Gesamt-ECTS"),
         enddatum=datum(daten.get("enddatum"), "Enddatum"),
+        startdatum=datum(daten.get("startdatum"), "Startdatum", optional=True),
         semester=[
             semester_aus_dict(s)
             for s in liste(daten.get("semester", []), "Semester")
@@ -153,6 +167,8 @@ def studiengang_aus_dict(daten) -> Studiengang:
 def studiengang_als_dict(studiengang: Studiengang) -> dict:
     daten = asdict(studiengang)
     daten["enddatum"] = studiengang.enddatum.isoformat()
+    daten["startdatum"] = studiengang.startdatum.isoformat() if studiengang.startdatum else None
+    daten["zielnote"] = str(studiengang.zielnote) if studiengang.zielnote is not None else None
     for semester, semester_daten in zip(studiengang.semester, daten["semester"]):
         semester_daten["beginn"] = semester.beginn.isoformat() if semester.beginn else None
         semester_daten["ende"] = semester.ende.isoformat() if semester.ende else None
@@ -161,12 +177,13 @@ def studiengang_als_dict(studiengang: Studiengang) -> dict:
             pruefungsdaten = modul_daten["pruefungsleistung"]
             pruefungsdaten["klasse"] = type(pruefung).__name__
             pruefungsdaten["termin"] = pruefung.termin.isoformat() if pruefung.termin else None
+            pruefungsdaten["note"] = str(pruefung.note) if pruefung.note is not None else None
     return {"studiengang": daten}
 
 
 def laden(pfad: Path) -> Studiengang:
     with pfad.open(encoding="utf-8-sig") as datei:
-        return studiengang_aus_dict(json.load(datei))
+        return studiengang_aus_dict(json.load(datei, parse_float=Decimal))
 
 
 def speichern(pfad: Path, studiengang: Studiengang, sichern: bool = False) -> None:

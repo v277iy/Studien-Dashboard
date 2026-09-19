@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pathlib import Path
 
 from PySide6.QtCore import QDate, QLocale, Qt
@@ -24,7 +25,7 @@ class StudiengangDialog(QDialog):
         self.studiengang: Studiengang | None = None
         self.setObjectName("einrichtung")
         self.setWindowTitle("Studiengang anlegen")
-        self.resize(540, 400)
+        self.resize(540, 440)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(28, 24, 28, 24)
@@ -59,6 +60,11 @@ class StudiengangDialog(QDialog):
         self.zielnote.setSingleStep(0.1)
         self.zielnote.setValue(2.0)
         formular.addRow("Zielnote", self.zielnote)
+        self.startdatum = QDateEdit(QDate.currentDate())
+        self.startdatum.setDisplayFormat("dd.MM.yyyy")
+        self.startdatum.setCalendarPopup(True)
+        self.startdatum.setDateRange(QDate(1, 1, 1), QDate(9999, 12, 31))
+        formular.addRow("Startdatum", self.startdatum)
         self.enddatum = QDateEdit(QDate.currentDate().addYears(3))
         self.enddatum.setDisplayFormat("dd.MM.yyyy")
         self.enddatum.setCalendarPopup(True)
@@ -90,15 +96,17 @@ class StudiengangDialog(QDialog):
         if not self.name.text().strip():
             self.name.setFocus()
             return
-        studiengang = Studiengang(
-            bezeichnung=self.name.text().strip(),
-            regelstudienzeit=self.semester.value(),
-            gesamt_ects=self.ects.value(),
-            zielnote=self.zielnote.value(),
-            enddatum=self.enddatum.date().toPython(),
-            semester=[Semester(nummer) for nummer in range(1, self.semester.value() + 1)],
-        )
+        self.zielnote.interpretText()
         try:
+            studiengang = Studiengang(
+                bezeichnung=self.name.text().strip(),
+                regelstudienzeit=self.semester.value(),
+                gesamt_ects=self.ects.value(),
+                zielnote=Decimal(self.zielnote.cleanText().replace(",", ".")),
+                startdatum=self.startdatum.date().toPython(),
+                enddatum=self.enddatum.date().toPython(),
+                semester=[Semester(nummer) for nummer in range(1, self.semester.value() + 1)],
+            )
             speichern(self.pfad, studiengang, sichern=True)
         except (OSError, ValueError) as fehler:
             self.fehler.setText(f"Speichern fehlgeschlagen: {fehler}")

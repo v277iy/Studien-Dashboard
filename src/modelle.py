@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date
+from decimal import Decimal
 from enum import StrEnum
 
 
@@ -20,7 +21,11 @@ class Pruefungsergebnis(StrEnum):
 class Pruefungsleistung(ABC):
     termin: date | None = None
     ergebnis: Pruefungsergebnis = Pruefungsergebnis.AUSSTEHEND
-    note: float | None = None
+    note: Decimal | None = None
+
+    def __post_init__(self) -> None:
+        if self.note is not None:
+            self.note = Decimal(str(self.note))
 
     @abstractmethod
     def fortschritt(self) -> float:
@@ -31,6 +36,7 @@ class Pruefungsleistung(ABC):
 
 
 class EinteiligePruefungsleistung(Pruefungsleistung):
+    @abstractmethod
     def fortschritt(self) -> float:
         return 0.0
 
@@ -40,24 +46,29 @@ class MehrteiligePruefungsleistung(Pruefungsleistung):
     anzahl_abschnitte: int
     aktueller_abschnitt: int | None = None
 
+    @abstractmethod
     def fortschritt(self) -> float:
         return 100 * (self.aktueller_abschnitt or 0) / self.anzahl_abschnitte
 
 
 class Klausur(EinteiligePruefungsleistung):
-    pass
+    def fortschritt(self) -> float:
+        return super().fortschritt()
 
 
 class Fallstudie(EinteiligePruefungsleistung):
-    pass
+    def fortschritt(self) -> float:
+        return super().fortschritt()
 
 
 class Portfolio(MehrteiligePruefungsleistung):
-    pass
+    def fortschritt(self) -> float:
+        return super().fortschritt()
 
 
 class Projektpraesentation(MehrteiligePruefungsleistung):
-    pass
+    def fortschritt(self) -> float:
+        return super().fortschritt()
 
 
 @dataclass
@@ -75,6 +86,38 @@ class Modul:
             return 100.0
         return self.pruefungsleistung.fortschritt()
 
+    def angaben_pruefen(self) -> None:
+        pruefung = self.pruefungsleistung
+        if self.status not in Bearbeitungsstatus:
+            raise ValueError("Unbekannter Bearbeitungsstatus.")
+        if pruefung.ergebnis not in Pruefungsergebnis:
+            raise ValueError("Unbekanntes Prüfungsergebnis.")
+        if self.status != Bearbeitungsstatus.FERTIG:
+            if pruefung.note is not None or pruefung.ergebnis != Pruefungsergebnis.AUSSTEHEND:
+                raise ValueError("Ergebnis und Note sind erst nach Abschluss möglich.")
+        if pruefung.note is not None:
+            if (
+                not isinstance(pruefung.note, Decimal)
+                or not pruefung.note.is_finite()
+                or not 1 <= pruefung.note <= 5
+            ):
+                raise ValueError("Note muss zwischen 1 und 5 liegen.")
+            if pruefung.ergebnis == Pruefungsergebnis.AUSSTEHEND:
+                raise ValueError("Für eine Note muss das Ergebnis feststehen.")
+            bestanden = pruefung.ergebnis == Pruefungsergebnis.BESTANDEN
+            if bestanden != (pruefung.note <= 4):
+                raise ValueError("Note und Prüfungsergebnis passen nicht zusammen.")
+        if isinstance(pruefung, MehrteiligePruefungsleistung):
+            anzahl = pruefung.anzahl_abschnitte
+            aktuell = pruefung.aktueller_abschnitt
+            if type(anzahl) is not int or anzahl < 1:
+                raise ValueError("Die Abschnittszahl muss positiv sein.")
+            if self.status == Bearbeitungsstatus.IN_BEARBEITUNG:
+                if type(aktuell) is not int or not 1 <= aktuell <= anzahl:
+                    raise ValueError("Der aktuelle Abschnitt liegt außerhalb des Bereichs.")
+            elif aktuell is not None:
+                raise ValueError("Ein aktueller Abschnitt ist nur in Bearbeitung möglich.")
+
 
 @dataclass
 class Semester:
@@ -82,6 +125,11 @@ class Semester:
     module: list[Modul] = field(default_factory=list)
     beginn: date | None = None
     ende: date | None = None
+
+    def ist_fertig(self) -> bool:
+        return bool(self.module) and all(
+            modul.status == Bearbeitungsstatus.FERTIG for modul in self.module
+        )
 
 
 @dataclass
@@ -91,22 +139,71 @@ class Studiengang:
     gesamt_ects: int
     enddatum: date
     semester: list[Semester] = field(default_factory=list)
-    zielnote: float | None = None
+    zielnote: Decimal | None = None
+    startdatum: date | None = None
+
+    def __post_init__(self) -> None:
+        if self.startdatum is not None and self.enddatum < self.startdatum:
+            raise ValueError("Das Enddatum darf nicht vor dem Startdatum liegen.")
+        if self.zielnote is not None:
+            self.zielnote = Decimal(str(self.zielnote))
 
     @property
     def module(self) -> list[Modul]:
         return [modul for semester in self.semester for modul in semester.module]
+
+    def aktuelles_semester(self) -> int | None:
+        return min((
+            semester.nummer for semester in self.semester
+            if any(modul.status != Bearbeitungsstatus.FERTIG for modul in semester.module)
+        ), default=None)
+
+    def verbleibende_semester(self) -> int:
+        zusaetzlich = {s.nummer for s in self.semester if s.nummer > self.regelstudienzeit}
+        fertig = {s.nummer for s in self.semester if s.ist_fertig()}
+        return max(0, self.regelstudienzeit + len(zusaetzlich) - len(fertig))
 
     def modul_hinzufuegen(self, modul: Modul, semesternummer: int) -> None:
         if type(semesternummer) is not int or not 1 <= semesternummer <= self.regelstudienzeit:
             raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")
         if any(m.modulcode == modul.modulcode for m in self.module):
             raise ValueError("Dieser Modulcode ist bereits vergeben.")
+        modul.angaben_pruefen()
         semester = next((s for s in self.semester if s.nummer == semesternummer), None)
         if semester is None:
             semester = Semester(semesternummer)
             self.semester.append(semester)
         semester.module.append(modul)
+
+    def modul_finden(self, modulcode: str) -> tuple[Semester, Modul]:
+        for semester in self.semester:
+            for modul in semester.module:
+                if modul.modulcode == modulcode:
+                    return semester, modul
+        raise ValueError("Modul wurde nicht gefunden.")
+
+    def modul_aktualisieren(
+        self, alter_code: str, modul: Modul, semesternummer: int
+    ) -> None:
+        altes_semester, altes_modul = self.modul_finden(alter_code)
+        if type(semesternummer) is not int or not (
+            1 <= semesternummer <= self.regelstudienzeit
+            or semesternummer == altes_semester.nummer
+        ):
+            raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")
+        if any(m is not altes_modul and m.modulcode == modul.modulcode for m in self.module):
+            raise ValueError("Dieser Modulcode ist bereits vergeben.")
+        modul.angaben_pruefen()
+        if semesternummer == altes_semester.nummer:
+            index = altes_semester.module.index(altes_modul)
+            altes_semester.module[index] = modul
+        else:
+            ziel = next((s for s in self.semester if s.nummer == semesternummer), None)
+            if ziel is None:
+                ziel = Semester(semesternummer)
+                self.semester.append(ziel)
+            altes_semester.module.remove(altes_modul)
+            ziel.module.append(modul)
 
     def erreichte_ects(self) -> float:
         return sum(m.ects for m in self.module if m.pruefungsleistung.ist_bestanden())
@@ -114,12 +211,21 @@ class Studiengang:
     def ects_fortschritt(self) -> float:
         return 100 * self.erreichte_ects() / self.gesamt_ects
 
-    def notendurchschnitt(self) -> float | None:
+    def notendurchschnitt(self) -> Decimal | None:
         benotet = [
             m for m in self.module
             if m.pruefungsleistung.ist_bestanden() and m.pruefungsleistung.note is not None
         ]
-        ects = sum(m.ects for m in benotet)
+        ects = sum((Decimal(str(m.ects)) for m in benotet), Decimal(0))
         if not ects:
             return None
-        return sum(m.ects * m.pruefungsleistung.note for m in benotet) / ects
+        notensumme = sum((
+            Decimal(str(m.ects)) * m.pruefungsleistung.note for m in benotet
+        ), Decimal(0))
+        return notensumme / ects
+
+    def zielnote_erreicht(self) -> bool | None:
+        durchschnitt = self.notendurchschnitt()
+        if durchschnitt is None or self.zielnote is None:
+            return None
+        return durchschnitt <= self.zielnote

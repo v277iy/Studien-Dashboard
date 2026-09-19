@@ -1,6 +1,6 @@
 from html import escape
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -27,6 +27,7 @@ STATUS_ANZEIGE = {
 
 class Modulleiste(QFrame):
     neues_modul = Signal()
+    modul_gewaehlt = Signal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -67,6 +68,10 @@ class Modulleiste(QFrame):
         self.liste.setObjectName("modulliste")
         self.liste.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.liste.setSpacing(3)
+        self.liste.itemClicked.connect(
+            lambda item: self.modul_gewaehlt.emit(item.data(Qt.ItemDataRole.UserRole))
+        )
+        self.liste.installEventFilter(self)
         inhalt.addWidget(self.liste, 1)
         trenner = QFrame()
         trenner.setObjectName("trenner")
@@ -82,6 +87,19 @@ class Modulleiste(QFrame):
         self.umschalter.toggled.connect(self.umklappen)
         self.suche.textChanged.connect(self.filtern)
         self.umklappen(True)
+
+    def eventFilter(self, objekt, event) -> bool:
+        if objekt is self.liste and event.type() == QEvent.Type.KeyPress:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                if not event.isAutoRepeat():
+                    self.aktuelles_modul_oeffnen()
+                return True
+        return super().eventFilter(objekt, event)
+
+    def aktuelles_modul_oeffnen(self) -> None:
+        item = self.liste.currentItem()
+        if item is not None:
+            self.modul_gewaehlt.emit(item.data(Qt.ItemDataRole.UserRole))
 
     def umklappen(self, ausgeklappt: bool) -> None:
         self.titel.setVisible(ausgeklappt)

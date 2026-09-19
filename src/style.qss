@@ -8,9 +8,18 @@ QWidget#hauptfenster, QWidget#dashboard, QDialog#einrichtung, QDialog#modulDialo
     background: #ffffff;
 }
 
+QScrollArea#modulFormScroll, QWidget#modulFormular, QWidget#modulFormViewport {
+    background: #ffffff;
+    border: none;
+}
+
 QLabel {
     background: transparent;
     border: none;
+}
+
+QDialog#modulDialog QLabel:disabled, QDialog#modulDialog QCheckBox:disabled {
+    color: #94a3b8;
 }
 
 QLabel[rolle="studiengang"] {
@@ -68,7 +77,30 @@ QLabel[rolle="ziel"], QLabel[rolle="status"] {
 }
 
 QLabel[rolle="ziel"] {
+    background: #edf1f6;
+    color: #64748b;
+}
+
+QLabel[rolle="zielstatus"] {
+    font-size: 11px;
+    color: #64748b;
+}
+
+QLabel[rolle="ziel"][zustand="erreicht"] {
+    background: #dcfce7;
+    color: #137333;
+}
+
+QLabel[rolle="ziel"][zustand="verfehlt"] {
     background: #fff4d6;
+    color: #9a6700;
+}
+
+QLabel[rolle="zielstatus"][zustand="erreicht"] {
+    color: #137333;
+}
+
+QLabel[rolle="zielstatus"][zustand="verfehlt"] {
     color: #9a6700;
 }
 
@@ -126,6 +158,10 @@ QFrame#modulkarte {
     background: #ffffff;
     border-radius: 10px;
     border-left: 5px solid #94a3b8;
+}
+
+QFrame#modulkarte:hover, QFrame#modulkarte:focus {
+    background: #f0f6ff;
 }
 
 QFrame#modulkarte[status="aktiv"] {
@@ -216,6 +252,12 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QComboBox {
     padding: 6px 8px;
     selection-background-color: #3b82f6;
     selection-color: #ffffff;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled,
+QDateEdit:disabled, QComboBox:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
 }
 
 QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QComboBox:focus {

@@ -1,8 +1,9 @@
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -29,7 +30,7 @@ from modelle import (
 )
 
 
-def dezimal(wert: float | None) -> str:
+def dezimal(wert: Decimal | None) -> str:
     return "—" if wert is None else f"{wert:.1f}".replace(".", ",")
 
 
@@ -54,7 +55,7 @@ def kennzahlenkasten(
 ) -> QFrame:
     kasten = QFrame()
     kasten.setObjectName("kennzahlen")
-    kasten.setFixedHeight(126)
+    kasten.setFixedHeight(150)
 
     layout = QGridLayout(kasten)
     layout.setContentsMargins(20, 16, 20, 16)
@@ -89,9 +90,26 @@ def studienfortschritt(studiengang: Studiengang) -> QFrame:
     rechts.setSpacing(4)
     rechts.addWidget(label("Aktuelle Durchschnittsnote", "muted"))
     noten = QHBoxLayout()
-    noten.addWidget(label(dezimal(studiengang.notendurchschnitt()), "wert"))
+    durchschnitt = studiengang.notendurchschnitt()
+    wert = label(dezimal(durchschnitt), "wert")
+    if durchschnitt is not None:
+        wert.setToolTip("Ungerundet: " + format(durchschnitt, "f").replace(".", ","))
+    noten.addWidget(wert)
+    erreichtes_ziel = studiengang.zielnote_erreicht()
+    zustand = "offen"
+    if erreichtes_ziel is True:
+        zieltext = "Zielnote erreicht"
+        zustand = "erreicht"
+    elif erreichtes_ziel is False:
+        zieltext = "Zielnote noch nicht erreicht"
+        zustand = "verfehlt"
+    elif studiengang.zielnote is None:
+        zieltext = "Keine Zielnote festgelegt"
+    else:
+        zieltext = "Noch keine Noten"
     if studiengang.zielnote is not None:
         ziel = label(f"Ziel: {dezimal(studiengang.zielnote)}", "ziel")
+        ziel.setProperty("zustand", zustand)
         ziel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         ziel.setFixedHeight(23)
         noten.addWidget(ziel)
@@ -99,39 +117,81 @@ def studienfortschritt(studiengang: Studiengang) -> QFrame:
     rechts.addLayout(noten)
     offen = max(0, studiengang.gesamt_ects - erreicht)
     rechts.addWidget(label(f"{offen:g} ECTS noch offen", "klein"))
+    vergleich = label(zieltext, "zielstatus")
+    vergleich.setProperty("zustand", zustand)
+    rechts.addWidget(vergleich)
     return kennzahlenkasten("Studienfortschritt", links, rechts)
 
 
 def zeitplan(studiengang: Studiengang) -> QFrame:
     heute = date.today()
-    aktuell = next((
-        s.nummer for s in studiengang.semester
-        if s.beginn and s.ende and s.beginn <= heute <= s.ende
-    ), None)
+    aktuell = studiengang.aktuelles_semester()
     semestertext = (
-        f"Aktuelles Semester: {aktuell}" if aktuell is not None
-        else f"Semester insgesamt: {studiengang.regelstudienzeit}"
+        f"Aktuelles Semester: {aktuell}" if aktuell is not None else "Keine offenen Module"
     )
+    start = (
+        studiengang.startdatum.strftime("%d.%m.%Y") if studiengang.startdatum else "—"
+    )
+    verbleibend = studiengang.verbleibende_semester()
     tage = (studiengang.enddatum - heute).days
     restzeit = f"Noch {tage} Tage" if tage > 0 else f"Vor {-tage} Tagen"
     if tage == 0:
         restzeit = "Enddatum heute"
     spalten = []
-    for titel, datum, zusatz in (
-        ("Aktuelles Datum", heute, semestertext),
-        ("Geplantes Enddatum", studiengang.enddatum, restzeit),
+    for titel, datum, zusatz, detail in (
+        ("Aktuelles Datum", heute, semestertext, f"Studienstart: {start}"),
+        ("Geplantes Enddatum", studiengang.enddatum, f"Noch {verbleibend} Semester", restzeit),
     ):
         spalte = QVBoxLayout()
         spalte.setSpacing(4)
         spalte.addWidget(label(titel, "muted"))
         spalte.addWidget(label(datum.strftime("%d.%m.%Y"), "wert"))
         spalte.addWidget(label(zusatz, "klein"))
+        spalte.addWidget(label(detail, "klein"))
         spalten.append(spalte)
     return kennzahlenkasten("Zeitplan", spalten[0], spalten[1])
 
 
+class ModulKarte(QFrame):
+    ausgewaehlt = Signal(str)
+
+    def __init__(self, modulcode: str) -> None:
+        super().__init__()
+        self.modulcode = modulcode
+        self.gedrueckt = False
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.gedrueckt = True
+            self.setFocus(Qt.FocusReason.MouseFocusReason)
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            oeffnen = self.gedrueckt and self.rect().contains(event.position().toPoint())
+            self.gedrueckt = False
+            event.accept()
+            if oeffnen:
+                self.ausgewaehlt.emit(self.modulcode)
+        else:
+            super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space):
+            event.accept()
+            if not event.isAutoRepeat():
+                self.ausgewaehlt.emit(self.modulcode)
+        else:
+            super().keyPressEvent(event)
+
+
 def modulkarte(modul: Modul, status: str) -> QFrame:
-    karte = QFrame()
+    karte = ModulKarte(modul.modulcode)
+    karte.setAccessibleName(f"Modul bearbeiten: {modul.bezeichnung}")
     karte.setObjectName("modulkarte")
     karte.setProperty("status", status)
     karte.setToolTip(modul.modulcode)
@@ -194,6 +254,8 @@ def modulkarte(modul: Modul, status: str) -> QFrame:
         unten.addWidget(termin)
     layout.addLayout(unten)
     layout.addStretch()
+    for widget in karte.findChildren(QWidget):
+        widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     return karte
 
 
@@ -322,6 +384,7 @@ class DashboardFenster(QMainWindow):
         self.hauptlayout.setSpacing(0)
         self.modulleiste = Modulleiste()
         self.modulleiste.neues_modul.connect(self.modul_anlegen)
+        self.modulleiste.modul_gewaehlt.connect(self.modul_bearbeiten)
         self.hauptlayout.addWidget(self.modulleiste)
         self.inhalt: QWidget | None = None
         self.aktualisieren()
@@ -329,6 +392,8 @@ class DashboardFenster(QMainWindow):
     def aktualisieren(self) -> None:
         self.modulleiste.anzeigen(self.studiengang.module)
         neuer_inhalt = dashboard_inhalt(self.studiengang)
+        for karte in neuer_inhalt.findChildren(ModulKarte):
+            karte.ausgewaehlt.connect(self.modul_bearbeiten)
         if self.inhalt is None:
             self.hauptlayout.addWidget(neuer_inhalt, 1)
         else:
@@ -338,7 +403,13 @@ class DashboardFenster(QMainWindow):
         self.inhalt = neuer_inhalt
 
     def modul_anlegen(self) -> None:
-        dialog = ModulDialog(self.studiengang, self.pfad, self)
+        self.modul_dialog_oeffnen()
+
+    def modul_bearbeiten(self, modulcode: str) -> None:
+        self.modul_dialog_oeffnen(modulcode)
+
+    def modul_dialog_oeffnen(self, modulcode: str | None = None) -> None:
+        dialog = ModulDialog(self.studiengang, self.pfad, self, modulcode=modulcode)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.studiengang = dialog.studiengang
             self.aktualisieren()
