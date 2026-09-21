@@ -54,19 +54,6 @@ def ganzzahl(wert, feld: str) -> int:
     return wert
 
 
-def zahl(wert, feld: str) -> float:
-    if (
-        type(wert) not in (int, float, Decimal)
-        or isinstance(wert, Decimal) and not wert.is_finite()
-        or not 0 < wert <= 2**31 - 1
-    ):
-        raise ValueError(f"{feld}: Positive Zahl bis 2147483647 erwartet.")
-    wert = float(wert)
-    if wert == 0:
-        raise ValueError(f"{feld}: Zahl ist zu klein.")
-    return wert
-
-
 def datum(wert, feld: str, optional: bool = False) -> date | None:
     if optional and wert is None:
         return None
@@ -124,7 +111,7 @@ def modul_aus_dict(daten) -> Modul:
     return Modul(
         modulcode=text(daten.get("modulcode"), "Modulcode"),
         bezeichnung=text(daten.get("bezeichnung"), "Modulname"),
-        ects=zahl(daten.get("ects"), "Modul-ECTS"),
+        ects=ganzzahl(daten.get("ects"), "Modul-ECTS"),
         status=Bearbeitungsstatus(daten.get("status")),
         pruefungsleistung=pruefung_aus_dict(daten.get("pruefungsleistung")),
     )

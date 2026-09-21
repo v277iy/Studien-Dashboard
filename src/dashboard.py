@@ -80,7 +80,7 @@ def studienfortschritt(studiengang: Studiengang) -> QFrame:
     links.addWidget(label("Erreichte ECTS", "muted"))
     erreicht = studiengang.erreichte_ects()
     prozent = studiengang.ects_fortschritt()
-    links.addWidget(label(f"{erreicht:g} / {studiengang.gesamt_ects}", "wert"))
+    links.addWidget(label(f"{erreicht} / {studiengang.gesamt_ects}", "wert"))
     fortschritt = QHBoxLayout()
     fortschritt.addWidget(balken(prozent), 1)
     fortschritt.addWidget(label(f"{prozent:.0f} %", "klein"))
@@ -116,7 +116,7 @@ def studienfortschritt(studiengang: Studiengang) -> QFrame:
     noten.addStretch()
     rechts.addLayout(noten)
     offen = max(0, studiengang.gesamt_ects - erreicht)
-    rechts.addWidget(label(f"{offen:g} ECTS noch offen", "klein"))
+    rechts.addWidget(label(f"{offen} ECTS noch offen", "klein"))
     vergleich = label(zieltext, "zielstatus")
     vergleich.setProperty("zustand", zustand)
     rechts.addWidget(vergleich)
@@ -217,7 +217,7 @@ def modulkarte(modul: Modul, status: str) -> QFrame:
     titel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
     layout.addWidget(titel)
     pruefungsart = type(pruefung).__name__.replace("Projektpraesentation", "Projektpräsentation")
-    layout.addWidget(label(f"{pruefungsart} · {modul.ects:g} ECTS", "muted"))
+    layout.addWidget(label(f"{pruefungsart} · {modul.ects} ECTS", "muted"))
 
     if fortschritt_anzeigen:
         abschnitt = pruefung.aktueller_abschnitt or "—"

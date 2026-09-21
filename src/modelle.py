@@ -75,7 +75,7 @@ class Projektpraesentation(MehrteiligePruefungsleistung):
 class Modul:
     modulcode: str
     bezeichnung: str
-    ects: float
+    ects: int
     status: Bearbeitungsstatus
     pruefungsleistung: Pruefungsleistung
 
@@ -87,6 +87,8 @@ class Modul:
         return self.pruefungsleistung.fortschritt()
 
     def angaben_pruefen(self) -> None:
+        if type(self.ects) is not int or self.ects < 1:
+            raise ValueError("ECTS müssen eine positive ganze Zahl sein.")
         pruefung = self.pruefungsleistung
         if self.status not in Bearbeitungsstatus:
             raise ValueError("Unbekannter Bearbeitungsstatus.")
@@ -205,7 +207,7 @@ class Studiengang:
             altes_semester.module.remove(altes_modul)
             ziel.module.append(modul)
 
-    def erreichte_ects(self) -> float:
+    def erreichte_ects(self) -> int:
         return sum(m.ects for m in self.module if m.pruefungsleistung.ist_bestanden())
 
     def ects_fortschritt(self) -> float:
@@ -216,11 +218,11 @@ class Studiengang:
             m for m in self.module
             if m.pruefungsleistung.ist_bestanden() and m.pruefungsleistung.note is not None
         ]
-        ects = sum((Decimal(str(m.ects)) for m in benotet), Decimal(0))
+        ects = sum(m.ects for m in benotet)
         if not ects:
             return None
         notensumme = sum((
-            Decimal(str(m.ects)) * m.pruefungsleistung.note for m in benotet
+            m.ects * m.pruefungsleistung.note for m in benotet
         ), Decimal(0))
         return notensumme / ects
 

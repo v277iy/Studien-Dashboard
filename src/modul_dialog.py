@@ -66,10 +66,8 @@ class ModulDialog(QDialog):
         self.code = QLineEdit()
         self.code.setPlaceholderText("Modulcode")
         self.feld_hinzufuegen("Modulcode", self.code)
-        self.ects = QDoubleSpinBox()
-        self.ects.setDecimals(1)
-        self.ects.setRange(0.5, 10000)
-        self.ects.setSingleStep(0.5)
+        self.ects = QSpinBox()
+        self.ects.setRange(1, 10000)
         self.ects.setValue(5)
         self.feld_hinzufuegen("ECTS-Punkte", self.ects)
         self.semester = QComboBox()
@@ -217,12 +215,11 @@ class ModulDialog(QDialog):
                 pruefung.termin.year, pruefung.termin.month, pruefung.termin.day
             ))
         self.benotet.setChecked(pruefung.note is not None)
-        for feld, wert in ((self.ects, modul.ects), (self.note, pruefung.note)):
-            if wert is not None:
-                feld.setDecimals(max(1, -Decimal(str(wert)).as_tuple().exponent))
-                anzeigewert = float(wert)
-                feld.setRange(min(feld.minimum(), anzeigewert), max(feld.maximum(), anzeigewert))
-                feld.setValue(anzeigewert)
+        self.ects.setMaximum(max(10000, modul.ects))
+        self.ects.setValue(modul.ects)
+        if pruefung.note is not None:
+            self.note.setDecimals(max(1, -pruefung.note.as_tuple().exponent))
+            self.note.setValue(float(pruefung.note))
 
     def note_bearbeitet(self) -> None:
         self.note_geaendert = True
