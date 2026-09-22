@@ -25,6 +25,7 @@ from modelle import (
     Bearbeitungsstatus,
     MehrteiligePruefungsleistung,
     Modul,
+    Prozent,
     Pruefungsergebnis,
     Studiengang,
 )
@@ -41,7 +42,7 @@ def label(text: str, rolle: str = "") -> QLabel:
     return widget
 
 
-def balken(wert: float = 0) -> QProgressBar:
+def balken(wert: Prozent = Decimal(0)) -> QProgressBar:
     widget = QProgressBar()
     widget.setRange(0, 100)
     widget.setValue(round(min(100, max(0, wert))))
@@ -129,12 +130,11 @@ def zeitplan(studiengang: Studiengang) -> QFrame:
     semestertext = (
         f"Aktuelles Semester: {aktuell}" if aktuell is not None else "Keine offenen Module"
     )
-    start = (
-        studiengang.startdatum.strftime("%d.%m.%Y") if studiengang.startdatum else "—"
-    )
+    start = studiengang.startdatum.strftime("%d.%m.%Y")
     verbleibend = studiengang.verbleibende_semester()
-    tage = (studiengang.enddatum - heute).days
-    restzeit = f"Noch {tage} Tage" if tage > 0 else f"Vor {-tage} Tagen"
+    tage = studiengang.verbleibende_tage(heute)
+    einheit = "Tag" if abs(tage) == 1 else "Tage"
+    restzeit = f"Noch {tage} {einheit}" if tage > 0 else f"Um {-tage} {einheit} überzogen"
     if tage == 0:
         restzeit = "Enddatum heute"
     spalten = []
@@ -216,8 +216,7 @@ def modulkarte(modul: Modul, status: str) -> QFrame:
     titel.setWordWrap(True)
     titel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
     layout.addWidget(titel)
-    pruefungsart = type(pruefung).__name__.replace("Projektpraesentation", "Projektpräsentation")
-    layout.addWidget(label(f"{pruefungsart} · {modul.ects} ECTS", "muted"))
+    layout.addWidget(label(f"{pruefung.pruefungsform.value} · {modul.ects} ECTS", "muted"))
 
     if fortschritt_anzeigen:
         abschnitt = pruefung.aktueller_abschnitt or "—"

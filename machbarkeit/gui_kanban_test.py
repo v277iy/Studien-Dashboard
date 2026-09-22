@@ -4,34 +4,14 @@ from __future__ import annotations
 
 import argparse
 import os
+from enum import StrEnum
 
 
-class Pruefungsleistung:
-    pass
-
-
-class EinteiligePruefungsleistung(Pruefungsleistung):
-    pass
-
-
-class MehrteiligePruefungsleistung(Pruefungsleistung):
-    pass
-
-
-class Klausur(EinteiligePruefungsleistung):
-    pass
-
-
-class Fallstudie(EinteiligePruefungsleistung):
-    pass
-
-
-class Portfolio(MehrteiligePruefungsleistung):
-    pass
-
-
-class Projektpräsentation(MehrteiligePruefungsleistung):
-    pass
+class Pruefungsform(StrEnum):
+    KLAUSUR = "Klausur"
+    FALLSTUDIE = "Fallstudie"
+    PORTFOLIO = "Portfolio"
+    PROJEKTPRAESENTATION = "Projektpräsentation"
 
 
 def argumente_lesen() -> argparse.Namespace:
@@ -76,21 +56,21 @@ def main() -> None:
             self.spalten: list[QFrame] = []
             self.karten: list[QPushButton] = []
             module = {
-                "Noch zu tun": [("Mathematik II", Klausur())],
-                "In Bearbeitung": [("OOP mit Python", Portfolio())],
-                "Fertig": [("Programmierung I", Klausur())],
+                "Noch zu tun": [("Mathematik II", Pruefungsform.KLAUSUR)],
+                "In Bearbeitung": [("OOP mit Python", Pruefungsform.PORTFOLIO)],
+                "Fertig": [("Programmierung I", Pruefungsform.KLAUSUR)],
             }
 
             for status, moduleintraege in module.items():
                 spalte = QFrame()
                 spaltenlayout = QVBoxLayout(spalte)
                 spaltenlayout.addWidget(QLabel(status))
-                for modulname, pruefungsleistung in moduleintraege:
-                    klassenname = type(pruefungsleistung).__name__
-                    karte = QPushButton(f"{modulname}\n{klassenname}")
+                for modulname, pruefungsform in moduleintraege:
+                    name_der_form = pruefungsform.value
+                    karte = QPushButton(f"{modulname}\n{name_der_form}")
                     karte.clicked.connect(
-                        lambda _checked=False, name=modulname, klasse=klassenname: (
-                            self.auswahl.setText(f"Ausgewählt: {name} ({klasse})")
+                        lambda _checked=False, name=modulname, form=name_der_form: (
+                            self.auswahl.setText(f"Ausgewählt: {name} ({form})")
                         )
                     )
                     spaltenlayout.addWidget(karte)
@@ -109,7 +89,7 @@ def main() -> None:
     assert "Klausur" in fenster.karten[0].text()
     fenster.karten[0].click()
     assert fenster.auswahl.text() == "Ausgewählt: Mathematik II (Klausur)"
-    print("GUI-Test erfolgreich: Modulkarten zeigen den konkreten Klassennamen an")
+    print("GUI-Test erfolgreich: Modulkarten zeigen die Prüfungsform aus dem Enum an")
 
     fenster.show()
     if argumente.smoke_test:

@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
+from calendar import monthrange
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 from enum import StrEnum
+
+
+type Prozent = Decimal
 
 
 class Bearbeitungsstatus(StrEnum):
@@ -17,18 +21,30 @@ class Pruefungsergebnis(StrEnum):
     NICHT_BESTANDEN = "NICHT_BESTANDEN"
 
 
+class Pruefungsform(StrEnum):
+    KLAUSUR = "Klausur"
+    FALLSTUDIE = "Fallstudie"
+    PORTFOLIO = "Portfolio"
+    PROJEKTPRAESENTATION = "Projektpräsentation"
+
+    def ist_mehrteilig(self) -> bool:
+        return self in (Pruefungsform.PORTFOLIO, Pruefungsform.PROJEKTPRAESENTATION)
+
+
 @dataclass(kw_only=True)
 class Pruefungsleistung(ABC):
+    pruefungsform: Pruefungsform
     termin: date | None = None
     ergebnis: Pruefungsergebnis = Pruefungsergebnis.AUSSTEHEND
     note: Decimal | None = None
 
     def __post_init__(self) -> None:
+        self.pruefungsform = Pruefungsform(self.pruefungsform)
         if self.note is not None:
             self.note = Decimal(str(self.note))
 
     @abstractmethod
-    def fortschritt(self) -> float:
+    def fortschritt(self) -> Prozent:
         pass
 
     def ist_bestanden(self) -> bool:
@@ -36,9 +52,8 @@ class Pruefungsleistung(ABC):
 
 
 class EinteiligePruefungsleistung(Pruefungsleistung):
-    @abstractmethod
-    def fortschritt(self) -> float:
-        return 0.0
+    def fortschritt(self) -> Prozent:
+        return Decimal(0)
 
 
 @dataclass
@@ -46,29 +61,8 @@ class MehrteiligePruefungsleistung(Pruefungsleistung):
     anzahl_abschnitte: int
     aktueller_abschnitt: int | None = None
 
-    @abstractmethod
-    def fortschritt(self) -> float:
-        return 100 * (self.aktueller_abschnitt or 0) / self.anzahl_abschnitte
-
-
-class Klausur(EinteiligePruefungsleistung):
-    def fortschritt(self) -> float:
-        return super().fortschritt()
-
-
-class Fallstudie(EinteiligePruefungsleistung):
-    def fortschritt(self) -> float:
-        return super().fortschritt()
-
-
-class Portfolio(MehrteiligePruefungsleistung):
-    def fortschritt(self) -> float:
-        return super().fortschritt()
-
-
-class Projektpraesentation(MehrteiligePruefungsleistung):
-    def fortschritt(self) -> float:
-        return super().fortschritt()
+    def fortschritt(self) -> Prozent:
+        return Decimal(100) * (self.aktueller_abschnitt or 0) / self.anzahl_abschnitte
 
 
 @dataclass
@@ -79,17 +73,21 @@ class Modul:
     status: Bearbeitungsstatus
     pruefungsleistung: Pruefungsleistung
 
-    def fortschritt(self) -> float:
+    def fortschritt(self) -> Prozent:
         if self.status == Bearbeitungsstatus.NOCH_ZU_TUN:
-            return 0.0
+            return Decimal(0)
         if self.status == Bearbeitungsstatus.FERTIG:
-            return 100.0
+            return Decimal(100)
         return self.pruefungsleistung.fortschritt()
 
     def angaben_pruefen(self) -> None:
         if type(self.ects) is not int or self.ects < 1:
             raise ValueError("ECTS müssen eine positive ganze Zahl sein.")
         pruefung = self.pruefungsleistung
+        if not isinstance(pruefung.pruefungsform, Pruefungsform):
+            raise ValueError("Unbekannte Prüfungsform.")
+        if pruefung.pruefungsform.ist_mehrteilig() != isinstance(pruefung, MehrteiligePruefungsleistung):
+            raise ValueError("Prüfungsform und Gliederung passen nicht zusammen.")
         if self.status not in Bearbeitungsstatus:
             raise ValueError("Unbekannter Bearbeitungsstatus.")
         if pruefung.ergebnis not in Pruefungsergebnis:
@@ -125,8 +123,6 @@ class Modul:
 class Semester:
     nummer: int
     module: list[Modul] = field(default_factory=list)
-    beginn: date | None = None
-    ende: date | None = None
 
     def ist_fertig(self) -> bool:
         return bool(self.module) and all(
@@ -139,16 +135,30 @@ class Studiengang:
     bezeichnung: str
     regelstudienzeit: int
     gesamt_ects: int
-    enddatum: date
+    startdatum: date
     semester: list[Semester] = field(default_factory=list)
     zielnote: Decimal | None = None
-    startdatum: date | None = None
 
     def __post_init__(self) -> None:
-        if self.startdatum is not None and self.enddatum < self.startdatum:
-            raise ValueError("Das Enddatum darf nicht vor dem Startdatum liegen.")
+        if not isinstance(self.startdatum, date):
+            raise ValueError("Ein gültiges Startdatum ist erforderlich.")
+        if type(self.regelstudienzeit) is not int or self.regelstudienzeit < 1:
+            raise ValueError("Die Semesterzahl muss eine positive ganze Zahl sein.")
+        if self.startdatum.year + (self.startdatum.month - 1 + 6 * self.regelstudienzeit) // 12 > 9999:
+            raise ValueError("Das berechnete Enddatum liegt nach dem Jahr 9999.")
         if self.zielnote is not None:
             self.zielnote = Decimal(str(self.zielnote))
+
+    @property
+    def enddatum(self) -> date:
+        monate = self.startdatum.month - 1 + 6 * self.regelstudienzeit
+        jahr = self.startdatum.year + monate // 12
+        monat = monate % 12 + 1
+        tag = min(self.startdatum.day, monthrange(jahr, monat)[1])
+        return date(jahr, monat, tag)
+
+    def verbleibende_tage(self, heute: date | None = None) -> int:
+        return (self.enddatum - (heute or date.today())).days
 
     @property
     def module(self) -> list[Modul]:
@@ -210,8 +220,8 @@ class Studiengang:
     def erreichte_ects(self) -> int:
         return sum(m.ects for m in self.module if m.pruefungsleistung.ist_bestanden())
 
-    def ects_fortschritt(self) -> float:
-        return 100 * self.erreichte_ects() / self.gesamt_ects
+    def ects_fortschritt(self) -> Prozent:
+        return Decimal(100) * self.erreichte_ects() / self.gesamt_ects
 
     def notendurchschnitt(self) -> Decimal | None:
         benotet = [

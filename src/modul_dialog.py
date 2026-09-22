@@ -23,12 +23,10 @@ from PySide6.QtWidgets import (
 
 from modelle import (
     Bearbeitungsstatus,
-    Fallstudie,
-    Klausur,
+    EinteiligePruefungsleistung,
     MehrteiligePruefungsleistung,
     Modul,
-    Portfolio,
-    Projektpraesentation,
+    Pruefungsform,
     Pruefungsergebnis,
     Studiengang,
 )
@@ -75,9 +73,8 @@ class ModulDialog(QDialog):
             self.semester.addItem(str(nummer), nummer)
         self.feld_hinzufuegen("Semester", self.semester)
         self.pruefungsform = QComboBox()
-        for klasse in (Klausur, Fallstudie, Portfolio, Projektpraesentation):
-            name = klasse.__name__.replace("Projektpraesentation", "Projektpräsentation")
-            self.pruefungsform.addItem(name, klasse)
+        for form in Pruefungsform:
+            self.pruefungsform.addItem(form.value, form)
         self.feld_hinzufuegen("Prüfungsform", self.pruefungsform)
         self.abschnitte = QSpinBox()
         self.abschnitte.setRange(1, 100)
@@ -201,7 +198,7 @@ class ModulDialog(QDialog):
         if self.semester.findData(semester.nummer) < 0:
             self.semester.addItem(str(semester.nummer), semester.nummer)
         self.semester.setCurrentIndex(self.semester.findData(semester.nummer))
-        self.pruefungsform.setCurrentIndex(self.pruefungsform.findData(type(pruefung)))
+        self.pruefungsform.setCurrentIndex(self.pruefungsform.findData(pruefung.pruefungsform))
         self.status.setCurrentIndex(self.status.findData(modul.status))
         self.ergebnis.setCurrentIndex(self.ergebnis.findData(pruefung.ergebnis))
         if isinstance(pruefung, MehrteiligePruefungsleistung):
@@ -225,14 +222,14 @@ class ModulDialog(QDialog):
         self.note_geaendert = True
 
     def eingabe_pruefen(self) -> None:
-        klasse = self.pruefungsform.currentData()
-        mehrteilig = klasse is not None and issubclass(klasse, MehrteiligePruefungsleistung)
+        form = self.pruefungsform.currentData()
+        mehrteilig = form is not None and Pruefungsform(form).ist_mehrteilig()
         bearbeiten = self.alter_code is not None
         self.abschnitte.setVisible(mehrteilig or bearbeiten)
         self.abschnitt_label.setVisible(mehrteilig or bearbeiten)
         self.abschnitte.setEnabled(mehrteilig)
         self.abschnitt_label.setEnabled(mehrteilig)
-        gueltig = klasse is not None and self.semester.currentData() is not None
+        gueltig = form is not None and self.semester.currentData() is not None
         if bearbeiten:
             status = self.status.currentData()
             fertig = status == Bearbeitungsstatus.FERTIG
@@ -274,9 +271,10 @@ class ModulDialog(QDialog):
         self.eingabe_pruefen()
         if not self.ok.isEnabled():
             return
-        klasse = self.pruefungsform.currentData()
+        form = Pruefungsform(self.pruefungsform.currentData())
+        klasse = MehrteiligePruefungsleistung if form.ist_mehrteilig() else EinteiligePruefungsleistung
         status = Bearbeitungsstatus.NOCH_ZU_TUN
-        werte = {}
+        werte = {"pruefungsform": form}
         if self.alter_code is not None:
             status = Bearbeitungsstatus(self.status.currentData())
             werte["termin"] = (
@@ -291,7 +289,7 @@ class ModulDialog(QDialog):
                         Decimal(self.note.cleanText().replace(",", "."))
                         if self.note_geaendert else self.note_original
                     )
-        if issubclass(klasse, MehrteiligePruefungsleistung):
+        if form.ist_mehrteilig():
             werte["anzahl_abschnitte"] = self.abschnitte.value()
             if status == Bearbeitungsstatus.IN_BEARBEITUNG:
                 werte["aktueller_abschnitt"] = self.aktueller_abschnitt.value()

@@ -8,26 +8,15 @@ from tempfile import NamedTemporaryFile
 
 from modelle import (
     Bearbeitungsstatus,
-    Fallstudie,
-    Klausur,
+    EinteiligePruefungsleistung,
     MehrteiligePruefungsleistung,
     Modul,
-    Portfolio,
-    Projektpraesentation,
+    Pruefungsform,
     Pruefungsergebnis,
     Pruefungsleistung,
     Semester,
     Studiengang,
 )
-
-
-PRUEFUNGSARTEN = {
-    "Klausur": Klausur,
-    "Fallstudie": Fallstudie,
-    "Portfolio": Portfolio,
-    "Projektpraesentation": Projektpraesentation,
-    "Projektpräsentation": Projektpraesentation,
-}
 
 
 def objekt(wert, feld: str) -> dict:
@@ -84,12 +73,11 @@ def note(wert) -> Decimal | None:
 
 def pruefung_aus_dict(daten) -> Pruefungsleistung:
     daten = objekt(daten, "Prüfungsleistung")
-    art = text(daten.get("klasse"), "Prüfungsart")
-    if art not in PRUEFUNGSARTEN:
-        raise ValueError(f"Unbekannte Prüfungsart: {art}")
-    klasse = PRUEFUNGSARTEN[art]
+    form = Pruefungsform(text(daten.get("pruefungsform"), "Prüfungsform"))
+    klasse = MehrteiligePruefungsleistung if form.ist_mehrteilig() else EinteiligePruefungsleistung
     ergebnis = daten.get("ergebnis")
     werte = {
+        "pruefungsform": form,
         "termin": datum(daten.get("termin"), "Prüfungstermin", optional=True),
         "ergebnis": Pruefungsergebnis(ergebnis) if ergebnis is not None
         else Pruefungsergebnis.AUSSTEHEND,
@@ -103,6 +91,8 @@ def pruefung_aus_dict(daten) -> Pruefungsleistung:
             if aktuell > anzahl:
                 raise ValueError("Aktueller Abschnitt ist größer als die Anzahl.")
         werte.update(anzahl_abschnitte=anzahl, aktueller_abschnitt=aktuell)
+    elif "anzahl_abschnitte" in daten or "aktueller_abschnitt" in daten:
+        raise ValueError("Einteilige Prüfungen haben keine Abschnitte.")
     return klasse(**werte)
 
 
@@ -119,15 +109,10 @@ def modul_aus_dict(daten) -> Modul:
 
 def semester_aus_dict(daten) -> Semester:
     daten = objekt(daten, "Semester")
-    semester = Semester(
+    return Semester(
         nummer=ganzzahl(daten.get("nummer"), "Semesternummer"),
         module=[modul_aus_dict(m) for m in liste(daten.get("module", []), "Module")],
-        beginn=datum(daten.get("beginn"), "Semesterbeginn", optional=True),
-        ende=datum(daten.get("ende"), "Semesterende", optional=True),
     )
-    if semester.beginn and semester.ende and semester.beginn > semester.ende:
-        raise ValueError("Semesterende liegt vor dem Beginn.")
-    return semester
 
 
 def studiengang_aus_dict(daten) -> Studiengang:
@@ -136,8 +121,7 @@ def studiengang_aus_dict(daten) -> Studiengang:
         bezeichnung=text(daten.get("bezeichnung"), "Studiengangname"),
         regelstudienzeit=ganzzahl(daten.get("regelstudienzeit"), "Anzahl Semester"),
         gesamt_ects=ganzzahl(daten.get("gesamt_ects"), "Gesamt-ECTS"),
-        enddatum=datum(daten.get("enddatum"), "Enddatum"),
-        startdatum=datum(daten.get("startdatum"), "Startdatum", optional=True),
+        startdatum=datum(daten.get("startdatum"), "Startdatum"),
         semester=[
             semester_aus_dict(s)
             for s in liste(daten.get("semester", []), "Semester")
@@ -153,16 +137,12 @@ def studiengang_aus_dict(daten) -> Studiengang:
 
 def studiengang_als_dict(studiengang: Studiengang) -> dict:
     daten = asdict(studiengang)
-    daten["enddatum"] = studiengang.enddatum.isoformat()
-    daten["startdatum"] = studiengang.startdatum.isoformat() if studiengang.startdatum else None
+    daten["startdatum"] = studiengang.startdatum.isoformat()
     daten["zielnote"] = str(studiengang.zielnote) if studiengang.zielnote is not None else None
     for semester, semester_daten in zip(studiengang.semester, daten["semester"]):
-        semester_daten["beginn"] = semester.beginn.isoformat() if semester.beginn else None
-        semester_daten["ende"] = semester.ende.isoformat() if semester.ende else None
         for modul, modul_daten in zip(semester.module, semester_daten["module"]):
             pruefung = modul.pruefungsleistung
             pruefungsdaten = modul_daten["pruefungsleistung"]
-            pruefungsdaten["klasse"] = type(pruefung).__name__
             pruefungsdaten["termin"] = pruefung.termin.isoformat() if pruefung.termin else None
             pruefungsdaten["note"] = str(pruefung.note) if pruefung.note is not None else None
     return {"studiengang": daten}

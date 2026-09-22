@@ -1,37 +1,37 @@
-"""Machbarkeitstest für polymorphe Fortschrittsberechnungen."""
-
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum
+from decimal import Decimal
+from enum import StrEnum
 
 
-class Bearbeitungsstatus(Enum):
+type Prozent = Decimal
+
+
+class Bearbeitungsstatus(StrEnum):
     NOCH_ZU_TUN = "NOCH_ZU_TUN"
     IN_BEARBEITUNG = "IN_BEARBEITUNG"
     FERTIG = "FERTIG"
 
 
+class Pruefungsform(StrEnum):
+    KLAUSUR = "Klausur"
+    FALLSTUDIE = "Fallstudie"
+    PORTFOLIO = "Portfolio"
+    PROJEKTPRAESENTATION = "Projektpräsentation"
 
 
+@dataclass(kw_only=True)
 class Pruefungsleistung(ABC):
+    pruefungsform: Pruefungsform
+
     @abstractmethod
-    def fortschritt(self) -> float:
-        """Gibt den Zwischenstand anhand der Gliederung der Leistung zurück."""
+    def fortschritt(self) -> Prozent:
+        pass
 
 
-@dataclass
 class EinteiligePruefungsleistung(Pruefungsleistung):
-    def fortschritt(self) -> float:
-        # Eine einteilige Leistung besitzt keine einzelnen Bearbeitungsabschnitte.
-        return 0.0
-
-
-class Klausur(EinteiligePruefungsleistung):
-    pass
-
-
+    def fortschritt(self) -> Prozent:
+        return Decimal(0)
 
 
 @dataclass
@@ -39,31 +39,8 @@ class MehrteiligePruefungsleistung(Pruefungsleistung):
     anzahl_abschnitte: int
     aktueller_abschnitt: int | None = None
 
-    def __post_init__(self) -> None:
-        if self.anzahl_abschnitte < 1:
-            raise ValueError("Die Anzahl der Abschnitte muss positiv sein.")
-        if (
-            self.aktueller_abschnitt is not None
-            and not 1 <= self.aktueller_abschnitt <= self.anzahl_abschnitte
-        ):
-            raise ValueError("Der aktuelle Abschnitt liegt außerhalb des gültigen Bereichs.")
-
-    def fortschritt(self) -> float:
-        if self.aktueller_abschnitt is None:
-            raise ValueError("Während der Bearbeitung muss ein Abschnitt gesetzt sein.")
-        return 100.0 * self.aktueller_abschnitt / self.anzahl_abschnitte
-
-
-class Fallstudie(EinteiligePruefungsleistung):
-    pass
-
-
-class Portfolio(MehrteiligePruefungsleistung):
-    pass
-
-
-class Projektpräsentation(MehrteiligePruefungsleistung):
-    pass
+    def fortschritt(self) -> Prozent:
+        return Decimal(100) * (self.aktueller_abschnitt or 0) / self.anzahl_abschnitte
 
 
 @dataclass
@@ -71,48 +48,28 @@ class Modul:
     status: Bearbeitungsstatus
     pruefungsleistung: Pruefungsleistung
 
-    def fortschritt(self) -> float:
-        if self.status is Bearbeitungsstatus.NOCH_ZU_TUN:
-            return 0.0
-        if self.status is Bearbeitungsstatus.FERTIG:
-            return 100.0
+    def fortschritt(self) -> Prozent:
+        if self.status == Bearbeitungsstatus.NOCH_ZU_TUN:
+            return Decimal(0)
+        if self.status == Bearbeitungsstatus.FERTIG:
+            return Decimal(100)
         return self.pruefungsleistung.fortschritt()
 
 
 def main() -> None:
     module = [
-        Modul(Bearbeitungsstatus.IN_BEARBEITUNG, Klausur()),
-        Modul(
-            Bearbeitungsstatus.IN_BEARBEITUNG,
-            Fallstudie(),
-        ),
-        Modul(
-            Bearbeitungsstatus.IN_BEARBEITUNG,
-            Portfolio(anzahl_abschnitte=4, aktueller_abschnitt=2),
-        ),
-        Modul(
-            Bearbeitungsstatus.NOCH_ZU_TUN,
-            Projektpräsentation(anzahl_abschnitte=4),
-        ),
-        Modul(
-            Bearbeitungsstatus.FERTIG,
-            Portfolio(anzahl_abschnitte=4),
-        ),
+        Modul(Bearbeitungsstatus.IN_BEARBEITUNG, EinteiligePruefungsleistung(pruefungsform=Pruefungsform.KLAUSUR)),
+        Modul(Bearbeitungsstatus.IN_BEARBEITUNG, EinteiligePruefungsleistung(pruefungsform=Pruefungsform.FALLSTUDIE)),
+        Modul(Bearbeitungsstatus.IN_BEARBEITUNG, MehrteiligePruefungsleistung(4, 2, pruefungsform=Pruefungsform.PORTFOLIO)),
+        Modul(Bearbeitungsstatus.NOCH_ZU_TUN, MehrteiligePruefungsleistung(4, pruefungsform=Pruefungsform.PROJEKTPRAESENTATION)),
+        Modul(Bearbeitungsstatus.FERTIG, MehrteiligePruefungsleistung(4, pruefungsform=Pruefungsform.PORTFOLIO)),
     ]
-    fortschritte = [modul.fortschritt() for modul in module]
-    pruefungsformen = [
-        type(modul.pruefungsleistung).__name__ for modul in module
-    ]
-    assert fortschritte == [0.0, 0.0, 50.0, 0.0, 100.0]
-    assert pruefungsformen == [
-        "Klausur",
-        "Fallstudie",
-        "Portfolio",
-        "Projektpräsentation",
-        "Portfolio",
-    ]
+    fortschritte = [m.fortschritt() for m in module]
+    assert fortschritte == [0, 0, 50, 0, 100]
+    assert all(isinstance(wert, Decimal) for wert in fortschritte)
+    assert len({type(m.pruefungsleistung) for m in module}) == 2
     print(f"Polymorpher Aufruf erfolgreich: {fortschritte}")
-    print(f"Aus Klassennamen ermittelte Prüfungsformen: {pruefungsformen}")
+    print([m.pruefungsleistung.pruefungsform.value for m in module])
 
 
 if __name__ == "__main__":

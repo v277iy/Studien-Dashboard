@@ -10,6 +10,8 @@ DATEIPFAD = Path(__file__).with_name("testdaten.json")
 TESTDATEN = {
     "studiengang": {
         "bezeichnung": "B.Sc. Informatik",
+        "startdatum": "2026-10-01",
+        "regelstudienzeit": 6,
         "gesamt_ects": 180,
         "zielnote": 2.0,
         "semester": [
@@ -22,7 +24,7 @@ TESTDATEN = {
                         "ects": 5,
                         "status": "IN_BEARBEITUNG",
                         "pruefungsleistung": {
-                            "klasse": "Portfolio",
+                            "pruefungsform": "Portfolio",
                             "ergebnis": None,
                             "note": None,
                             "anzahl_abschnitte": 4,
