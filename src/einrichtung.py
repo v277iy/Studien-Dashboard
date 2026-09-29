@@ -81,11 +81,15 @@ class StudiengangDialog(QDialog):
         self.ok.setText("Ok")
         self.ok.setEnabled(False)
         knoepfe.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
-        self.name.textChanged.connect(lambda text: self.ok.setEnabled(bool(text.strip())))
+        self.name.textChanged.connect(self.eingabe_pruefen)
         knoepfe.accepted.connect(self.accept)
         knoepfe.rejected.connect(self.reject)
         layout.addWidget(knoepfe)
         self.name.setFocus()
+
+    def eingabe_pruefen(self) -> None:
+        name = self.name.text().strip()
+        self.ok.setEnabled(name != "")
 
     def accept(self) -> None:
         if not self.name.text().strip():

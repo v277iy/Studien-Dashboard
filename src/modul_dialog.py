@@ -44,9 +44,13 @@ class ModulDialog(QDialog):
         self.modul: Modul | None = None
         self.alter_code = modulcode
         self.setObjectName("modulDialog")
-        fenstertitel = "Modul bearbeiten" if modulcode is not None else "Modul anlegen"
+        if modulcode is None:
+            fenstertitel = "Modul anlegen"
+            self.resize(540, 440)
+        else:
+            fenstertitel = "Modul bearbeiten"
+            self.resize(580, 650)
         self.setWindowTitle(fenstertitel)
-        self.resize(580, 650) if modulcode is not None else self.resize(540, 440)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(28, 24, 28, 24)
@@ -231,78 +235,95 @@ class ModulDialog(QDialog):
         self.abschnitt_label.setEnabled(mehrteilig)
         gueltig = form is not None and self.semester.currentData() is not None
         if bearbeiten:
+            self.bearbeitungsfelder_aktualisieren(mehrteilig)
             status = self.status.currentData()
-            fertig = status == Bearbeitungsstatus.FERTIG
-            aktuell = mehrteilig and status == Bearbeitungsstatus.IN_BEARBEITUNG
-            self.aktueller_abschnitt.setEnabled(aktuell)
-            self.aktuell_label.setEnabled(aktuell)
-            self.aktueller_abschnitt.setSpecialValueText("" if aktuell else "—")
-            self.aktueller_abschnitt.setRange(1 if aktuell else 0, self.abschnitte.value())
-            if not aktuell:
-                self.aktueller_abschnitt.setValue(0)
-            self.termin.setEnabled(self.termin_festgelegt.isChecked())
-            self.ergebnis.setEnabled(fertig)
-            self.ergebnis_label.setEnabled(fertig)
-            if not fertig:
-                self.ergebnis.setCurrentIndex(0)
-            ergebnis = self.ergebnis.currentData()
-            note_erlaubt = fertig and ergebnis in (
-                Pruefungsergebnis.BESTANDEN, Pruefungsergebnis.NICHT_BESTANDEN
-            )
-            self.benotet.setEnabled(note_erlaubt)
-            self.note_label.setEnabled(note_erlaubt)
-            if not note_erlaubt:
-                self.benotet.setChecked(False)
-            benotet = note_erlaubt and self.benotet.isChecked()
-            self.note.setEnabled(benotet)
-            leer = self.note.value() == 0
-            self.note.setSpecialValueText("" if benotet else "—")
-            self.note.setRange(1 if benotet else 0, 5)
-            if not benotet:
-                self.note.setValue(0)
-            elif leer:
-                self.note.setValue(5 if ergebnis == Pruefungsergebnis.NICHT_BESTANDEN else 2)
-            gueltig = gueltig and status is not None and (not fertig or ergebnis is not None)
-        self.ok.setEnabled(bool(
-            self.name.text().strip() and self.code.text().strip() and gueltig
-        ))
+            if status is None:
+                gueltig = False
+            if status == Bearbeitungsstatus.FERTIG and self.ergebnis.currentData() is None:
+                gueltig = False
+        if not self.name.text().strip() or not self.code.text().strip():
+            gueltig = False
+        self.ok.setEnabled(gueltig)
 
-    def accept(self) -> None:
-        self.eingabe_pruefen()
-        if not self.ok.isEnabled():
-            return
+    def bearbeitungsfelder_aktualisieren(self, mehrteilig: bool) -> None:
+        status = self.status.currentData()
+        fertig = status == Bearbeitungsstatus.FERTIG
+        aktuell = mehrteilig and status == Bearbeitungsstatus.IN_BEARBEITUNG
+        self.aktueller_abschnitt.setEnabled(aktuell)
+        self.aktuell_label.setEnabled(aktuell)
+        self.aktueller_abschnitt.setSpecialValueText("" if aktuell else "—")
+        self.aktueller_abschnitt.setRange(1 if aktuell else 0, self.abschnitte.value())
+        if not aktuell:
+            self.aktueller_abschnitt.setValue(0)
+        self.termin.setEnabled(self.termin_festgelegt.isChecked())
+        self.ergebnis.setEnabled(fertig)
+        self.ergebnis_label.setEnabled(fertig)
+        if not fertig:
+            self.ergebnis.setCurrentIndex(0)
+
+        ergebnis = self.ergebnis.currentData()
+        note_erlaubt = fertig and ergebnis in (
+            Pruefungsergebnis.BESTANDEN, Pruefungsergebnis.NICHT_BESTANDEN
+        )
+        self.benotet.setEnabled(note_erlaubt)
+        self.note_label.setEnabled(note_erlaubt)
+        if not note_erlaubt:
+            self.benotet.setChecked(False)
+        benotet = note_erlaubt and self.benotet.isChecked()
+        self.note.setEnabled(benotet)
+        leer = self.note.value() == 0
+        self.note.setSpecialValueText("" if benotet else "—")
+        self.note.setRange(1 if benotet else 0, 5)
+        if not benotet:
+            self.note.setValue(0)
+        elif leer:
+            if ergebnis == Pruefungsergebnis.NICHT_BESTANDEN:
+                self.note.setValue(5)
+            else:
+                self.note.setValue(2)
+
+    def modul_aus_eingaben(self) -> Modul:
         form = Pruefungsform(self.pruefungsform.currentData())
-        klasse = MehrteiligePruefungsleistung if form.ist_mehrteilig() else EinteiligePruefungsleistung
+        if form.ist_mehrteilig():
+            pruefung = MehrteiligePruefungsleistung(
+                pruefungsform=form, anzahl_abschnitte=self.abschnitte.value()
+            )
+        else:
+            pruefung = EinteiligePruefungsleistung(pruefungsform=form)
+
         status = Bearbeitungsstatus.NOCH_ZU_TUN
-        werte = {"pruefungsform": form}
         if self.alter_code is not None:
             status = Bearbeitungsstatus(self.status.currentData())
-            werte["termin"] = (
-                self.termin.date().toPython() if self.termin_festgelegt.isChecked() else None
-            )
+            if self.termin_festgelegt.isChecked():
+                pruefung.termin = self.termin.date().toPython()
+            if form.ist_mehrteilig() and status == Bearbeitungsstatus.IN_BEARBEITUNG:
+                pruefung.aktueller_abschnitt = self.aktueller_abschnitt.value()
             if status == Bearbeitungsstatus.FERTIG:
-                werte["ergebnis"] = Pruefungsergebnis(self.ergebnis.currentData())
-                werte["note"] = None
+                pruefung.ergebnis = Pruefungsergebnis(self.ergebnis.currentData())
                 if self.benotet.isChecked():
                     self.note.interpretText()
-                    werte["note"] = (
-                        Decimal(self.note.cleanText().replace(",", "."))
-                        if self.note_geaendert else self.note_original
-                    )
-        if form.ist_mehrteilig():
-            werte["anzahl_abschnitte"] = self.abschnitte.value()
-            if status == Bearbeitungsstatus.IN_BEARBEITUNG:
-                werte["aktueller_abschnitt"] = self.aktueller_abschnitt.value()
-        pruefung = klasse(**werte)
-        modul = Modul(
+                    if self.note_geaendert:
+                        pruefung.note = Decimal(self.note.cleanText().replace(",", "."))
+                    else:
+                        # Die Anzeige kann genauer gespeicherte Noten runden.
+                        pruefung.note = self.note_original
+
+        return Modul(
             modulcode=self.code.text().strip(),
             bezeichnung=self.name.text().strip(),
             ects=self.ects.value(),
             status=status,
             pruefungsleistung=pruefung,
         )
-        neuer_studiengang = deepcopy(self.studiengang)
+
+    def accept(self) -> None:
+        self.eingabe_pruefen()
+        if not self.ok.isEnabled():
+            return
         try:
+            modul = self.modul_aus_eingaben()
+            # Das Original bleibt bei Abbruch oder Schreibfehlern unverändert.
+            neuer_studiengang = deepcopy(self.studiengang)
             if self.alter_code is None:
                 neuer_studiengang.modul_hinzufuegen(modul, self.semester.currentData())
             else:

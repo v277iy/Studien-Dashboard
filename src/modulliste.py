@@ -68,9 +68,7 @@ class Modulleiste(QFrame):
         self.liste.setObjectName("modulliste")
         self.liste.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.liste.setSpacing(3)
-        self.liste.itemClicked.connect(
-            lambda item: self.modul_gewaehlt.emit(item.data(Qt.ItemDataRole.UserRole))
-        )
+        self.liste.itemClicked.connect(self.modul_oeffnen)
         self.liste.installEventFilter(self)
         inhalt.addWidget(self.liste, 1)
         trenner = QFrame()
@@ -79,7 +77,7 @@ class Modulleiste(QFrame):
         inhalt.addWidget(trenner)
         self.hinzufuegen = QPushButton("+ Modul hinzufügen")
         self.hinzufuegen.setObjectName("modulHinzufuegen")
-        self.hinzufuegen.clicked.connect(lambda: self.neues_modul.emit())
+        self.hinzufuegen.clicked.connect(self.neues_modul)
         inhalt.addWidget(self.hinzufuegen)
         layout.addWidget(self.listenbereich, 1)
         layout.addStretch()
@@ -96,10 +94,14 @@ class Modulleiste(QFrame):
                 return True
         return super().eventFilter(objekt, event)
 
+    def modul_oeffnen(self, item: QListWidgetItem) -> None:
+        modulcode = item.data(Qt.ItemDataRole.UserRole)
+        self.modul_gewaehlt.emit(modulcode)
+
     def aktuelles_modul_oeffnen(self) -> None:
         item = self.liste.currentItem()
         if item is not None:
-            self.modul_gewaehlt.emit(item.data(Qt.ItemDataRole.UserRole))
+            self.modul_oeffnen(item)
 
     def umklappen(self, ausgeklappt: bool) -> None:
         self.titel.setVisible(ausgeklappt)
@@ -151,7 +153,8 @@ class Modulleiste(QFrame):
             item = self.liste.item(index)
             passt = suchtext in item.data(Qt.ItemDataRole.UserRole + 1)
             item.setHidden(not passt)
-            sichtbar += passt
+            if passt:
+                sichtbar += 1
         self.leerhinweis.setText("Keine Treffer" if suchtext else "Noch keine Module")
         self.leerhinweis.setVisible(sichtbar == 0)
 

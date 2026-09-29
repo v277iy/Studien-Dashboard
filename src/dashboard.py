@@ -32,7 +32,9 @@ from modelle import (
 
 
 def dezimal(wert: Decimal | None) -> str:
-    return "—" if wert is None else f"{wert:.1f}".replace(".", ",")
+    if wert is None:
+        return "—"
+    return f"{wert:.1f}".replace(".", ",")
 
 
 def label(text: str, rolle: str = "") -> QLabel:
@@ -127,29 +129,35 @@ def studienfortschritt(studiengang: Studiengang) -> QFrame:
 def zeitplan(studiengang: Studiengang) -> QFrame:
     heute = date.today()
     aktuell = studiengang.aktuelles_semester()
-    semestertext = (
-        f"Aktuelles Semester: {aktuell}" if aktuell is not None else "Keine offenen Module"
-    )
+    if aktuell is None:
+        semestertext = "Keine offenen Module"
+    else:
+        semestertext = f"Aktuelles Semester: {aktuell}"
     start = studiengang.startdatum.strftime("%d.%m.%Y")
     verbleibend = studiengang.verbleibende_semester()
     tage = studiengang.verbleibende_tage(heute)
     einheit = "Tag" if abs(tage) == 1 else "Tage"
-    restzeit = f"Noch {tage} {einheit}" if tage > 0 else f"Um {-tage} {einheit} überzogen"
-    if tage == 0:
+    if tage > 0:
+        restzeit = f"Noch {tage} {einheit}"
+    elif tage < 0:
+        restzeit = f"Um {-tage} {einheit} überzogen"
+    else:
         restzeit = "Enddatum heute"
-    spalten = []
-    for titel, datum, zusatz, detail in (
-        ("Aktuelles Datum", heute, semestertext, f"Studienstart: {start}"),
-        ("Geplantes Enddatum", studiengang.enddatum, f"Noch {verbleibend} Semester", restzeit),
-    ):
-        spalte = QVBoxLayout()
-        spalte.setSpacing(4)
-        spalte.addWidget(label(titel, "muted"))
-        spalte.addWidget(label(datum.strftime("%d.%m.%Y"), "wert"))
-        spalte.addWidget(label(zusatz, "klein"))
-        spalte.addWidget(label(detail, "klein"))
-        spalten.append(spalte)
-    return kennzahlenkasten("Zeitplan", spalten[0], spalten[1])
+
+    links = QVBoxLayout()
+    links.setSpacing(4)
+    links.addWidget(label("Aktuelles Datum", "muted"))
+    links.addWidget(label(heute.strftime("%d.%m.%Y"), "wert"))
+    links.addWidget(label(semestertext, "klein"))
+    links.addWidget(label(f"Studienstart: {start}", "klein"))
+
+    rechts = QVBoxLayout()
+    rechts.setSpacing(4)
+    rechts.addWidget(label("Geplantes Enddatum", "muted"))
+    rechts.addWidget(label(studiengang.enddatum.strftime("%d.%m.%Y"), "wert"))
+    rechts.addWidget(label(f"Noch {verbleibend} Semester", "klein"))
+    rechts.addWidget(label(restzeit, "klein"))
+    return kennzahlenkasten("Zeitplan", links, rechts)
 
 
 class ModulKarte(QFrame):
@@ -393,12 +401,11 @@ class DashboardFenster(QMainWindow):
         neuer_inhalt = dashboard_inhalt(self.studiengang)
         for karte in neuer_inhalt.findChildren(ModulKarte):
             karte.ausgewaehlt.connect(self.modul_bearbeiten)
-        if self.inhalt is None:
-            self.hauptlayout.addWidget(neuer_inhalt, 1)
-        else:
-            self.hauptlayout.replaceWidget(self.inhalt, neuer_inhalt)
+        if self.inhalt is not None:
+            self.hauptlayout.removeWidget(self.inhalt)
             self.inhalt.setParent(None)
             self.inhalt.deleteLater()
+        self.hauptlayout.addWidget(neuer_inhalt, 1)
         self.inhalt = neuer_inhalt
 
     def modul_anlegen(self) -> None:

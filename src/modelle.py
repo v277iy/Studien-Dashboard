@@ -86,7 +86,8 @@ class Modul:
         pruefung = self.pruefungsleistung
         if not isinstance(pruefung.pruefungsform, Pruefungsform):
             raise ValueError("Unbekannte Prüfungsform.")
-        if pruefung.pruefungsform.ist_mehrteilig() != isinstance(pruefung, MehrteiligePruefungsleistung):
+        mehrteilig = isinstance(pruefung, MehrteiligePruefungsleistung)
+        if pruefung.pruefungsform.ist_mehrteilig() != mehrteilig:
             raise ValueError("Prüfungsform und Gliederung passen nicht zusammen.")
         if self.status not in Bearbeitungsstatus:
             raise ValueError("Unbekannter Bearbeitungsstatus.")
@@ -125,9 +126,12 @@ class Semester:
     module: list[Modul] = field(default_factory=list)
 
     def ist_fertig(self) -> bool:
-        return bool(self.module) and all(
-            modul.status == Bearbeitungsstatus.FERTIG for modul in self.module
-        )
+        if not self.module:
+            return False
+        for modul in self.module:
+            if modul.status != Bearbeitungsstatus.FERTIG:
+                return False
+        return True
 
 
 @dataclass
@@ -144,7 +148,9 @@ class Studiengang:
             raise ValueError("Ein gültiges Startdatum ist erforderlich.")
         if type(self.regelstudienzeit) is not int or self.regelstudienzeit < 1:
             raise ValueError("Die Semesterzahl muss eine positive ganze Zahl sein.")
-        if self.startdatum.year + (self.startdatum.month - 1 + 6 * self.regelstudienzeit) // 12 > 9999:
+        monate = self.startdatum.month - 1 + 6 * self.regelstudienzeit
+        endjahr = self.startdatum.year + monate // 12
+        if endjahr > 9999:
             raise ValueError("Das berechnete Enddatum liegt nach dem Jahr 9999.")
         if self.zielnote is not None:
             self.zielnote = Decimal(str(self.zielnote))
@@ -158,33 +164,51 @@ class Studiengang:
         return date(jahr, monat, tag)
 
     def verbleibende_tage(self, heute: date | None = None) -> int:
-        return (self.enddatum - (heute or date.today())).days
+        if heute is None:
+            heute = date.today()
+        return (self.enddatum - heute).days
 
     @property
     def module(self) -> list[Modul]:
-        return [modul for semester in self.semester for modul in semester.module]
+        module = []
+        for semester in self.semester:
+            module.extend(semester.module)
+        return module
 
     def aktuelles_semester(self) -> int | None:
-        return min((
-            semester.nummer for semester in self.semester
-            if any(modul.status != Bearbeitungsstatus.FERTIG for modul in semester.module)
-        ), default=None)
+        aktuell = None
+        for semester in self.semester:
+            if semester.module and not semester.ist_fertig():
+                if aktuell is None or semester.nummer < aktuell:
+                    aktuell = semester.nummer
+        return aktuell
 
     def verbleibende_semester(self) -> int:
-        zusaetzlich = {s.nummer for s in self.semester if s.nummer > self.regelstudienzeit}
-        fertig = {s.nummer for s in self.semester if s.ist_fertig()}
+        zusaetzlich = set()
+        fertig = set()
+        for semester in self.semester:
+            if semester.nummer > self.regelstudienzeit:
+                zusaetzlich.add(semester.nummer)
+            if semester.ist_fertig():
+                fertig.add(semester.nummer)
         return max(0, self.regelstudienzeit + len(zusaetzlich) - len(fertig))
+
+    def semester_finden_oder_anlegen(self, nummer: int) -> Semester:
+        for semester in self.semester:
+            if semester.nummer == nummer:
+                return semester
+        semester = Semester(nummer)
+        self.semester.append(semester)
+        return semester
 
     def modul_hinzufuegen(self, modul: Modul, semesternummer: int) -> None:
         if type(semesternummer) is not int or not 1 <= semesternummer <= self.regelstudienzeit:
             raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")
-        if any(m.modulcode == modul.modulcode for m in self.module):
-            raise ValueError("Dieser Modulcode ist bereits vergeben.")
+        for vorhanden in self.module:
+            if vorhanden.modulcode == modul.modulcode:
+                raise ValueError("Dieser Modulcode ist bereits vergeben.")
         modul.angaben_pruefen()
-        semester = next((s for s in self.semester if s.nummer == semesternummer), None)
-        if semester is None:
-            semester = Semester(semesternummer)
-            self.semester.append(semester)
+        semester = self.semester_finden_oder_anlegen(semesternummer)
         semester.module.append(modul)
 
     def modul_finden(self, modulcode: str) -> tuple[Semester, Modul]:
@@ -198,42 +222,43 @@ class Studiengang:
         self, alter_code: str, modul: Modul, semesternummer: int
     ) -> None:
         altes_semester, altes_modul = self.modul_finden(alter_code)
-        if type(semesternummer) is not int or not (
-            1 <= semesternummer <= self.regelstudienzeit
-            or semesternummer == altes_semester.nummer
-        ):
+        if type(semesternummer) is not int:
             raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")
-        if any(m is not altes_modul and m.modulcode == modul.modulcode for m in self.module):
-            raise ValueError("Dieser Modulcode ist bereits vergeben.")
+        if semesternummer != altes_semester.nummer:
+            if not 1 <= semesternummer <= self.regelstudienzeit:
+                raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")
+        for vorhanden in self.module:
+            if vorhanden is not altes_modul and vorhanden.modulcode == modul.modulcode:
+                raise ValueError("Dieser Modulcode ist bereits vergeben.")
         modul.angaben_pruefen()
         if semesternummer == altes_semester.nummer:
             index = altes_semester.module.index(altes_modul)
             altes_semester.module[index] = modul
         else:
-            ziel = next((s for s in self.semester if s.nummer == semesternummer), None)
-            if ziel is None:
-                ziel = Semester(semesternummer)
-                self.semester.append(ziel)
+            ziel = self.semester_finden_oder_anlegen(semesternummer)
             altes_semester.module.remove(altes_modul)
             ziel.module.append(modul)
 
     def erreichte_ects(self) -> int:
-        return sum(m.ects for m in self.module if m.pruefungsleistung.ist_bestanden())
+        ects = 0
+        for modul in self.module:
+            if modul.pruefungsleistung.ist_bestanden():
+                ects += modul.ects
+        return ects
 
     def ects_fortschritt(self) -> Prozent:
         return Decimal(100) * self.erreichte_ects() / self.gesamt_ects
 
     def notendurchschnitt(self) -> Decimal | None:
-        benotet = [
-            m for m in self.module
-            if m.pruefungsleistung.ist_bestanden() and m.pruefungsleistung.note is not None
-        ]
-        ects = sum(m.ects for m in benotet)
-        if not ects:
+        notensumme = Decimal(0)
+        ects = 0
+        for modul in self.module:
+            pruefung = modul.pruefungsleistung
+            if pruefung.ist_bestanden() and pruefung.note is not None:
+                notensumme += modul.ects * pruefung.note
+                ects += modul.ects
+        if ects == 0:
             return None
-        notensumme = sum((
-            m.ects * m.pruefungsleistung.note for m in benotet
-        ), Decimal(0))
         return notensumme / ects
 
     def zielnote_erreicht(self) -> bool | None:

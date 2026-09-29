@@ -74,26 +74,28 @@ def note(wert) -> Decimal | None:
 def pruefung_aus_dict(daten) -> Pruefungsleistung:
     daten = objekt(daten, "Prüfungsleistung")
     form = Pruefungsform(text(daten.get("pruefungsform"), "Prüfungsform"))
-    klasse = MehrteiligePruefungsleistung if form.ist_mehrteilig() else EinteiligePruefungsleistung
-    ergebnis = daten.get("ergebnis")
-    werte = {
-        "pruefungsform": form,
-        "termin": datum(daten.get("termin"), "Prüfungstermin", optional=True),
-        "ergebnis": Pruefungsergebnis(ergebnis) if ergebnis is not None
-        else Pruefungsergebnis.AUSSTEHEND,
-        "note": note(daten.get("note")),
-    }
-    if issubclass(klasse, MehrteiligePruefungsleistung):
+    if form.ist_mehrteilig():
         anzahl = ganzzahl(daten.get("anzahl_abschnitte"), "Anzahl Abschnitte")
         aktuell = daten.get("aktueller_abschnitt")
         if aktuell is not None:
             aktuell = ganzzahl(aktuell, "Aktueller Abschnitt")
             if aktuell > anzahl:
                 raise ValueError("Aktueller Abschnitt ist größer als die Anzahl.")
-        werte.update(anzahl_abschnitte=anzahl, aktueller_abschnitt=aktuell)
-    elif "anzahl_abschnitte" in daten or "aktueller_abschnitt" in daten:
-        raise ValueError("Einteilige Prüfungen haben keine Abschnitte.")
-    return klasse(**werte)
+        pruefung = MehrteiligePruefungsleistung(
+            pruefungsform=form,
+            anzahl_abschnitte=anzahl,
+            aktueller_abschnitt=aktuell,
+        )
+    else:
+        if "anzahl_abschnitte" in daten or "aktueller_abschnitt" in daten:
+            raise ValueError("Einteilige Prüfungen haben keine Abschnitte.")
+        pruefung = EinteiligePruefungsleistung(pruefungsform=form)
+
+    pruefung.termin = datum(daten.get("termin"), "Prüfungstermin", optional=True)
+    pruefung.note = note(daten.get("note"))
+    if daten.get("ergebnis") is not None:
+        pruefung.ergebnis = Pruefungsergebnis(daten["ergebnis"])
+    return pruefung
 
 
 def modul_aus_dict(daten) -> Modul:
@@ -116,7 +118,8 @@ def semester_aus_dict(daten) -> Semester:
 
 
 def studiengang_aus_dict(daten) -> Studiengang:
-    daten = objekt(objekt(daten, "Datei").get("studiengang"), "Studiengang")
+    daten = objekt(daten, "Datei")
+    daten = objekt(daten.get("studiengang"), "Studiengang")
     studiengang = Studiengang(
         bezeichnung=text(daten.get("bezeichnung"), "Studiengangname"),
         regelstudienzeit=ganzzahl(daten.get("regelstudienzeit"), "Anzahl Semester"),
@@ -137,14 +140,16 @@ def studiengang_aus_dict(daten) -> Studiengang:
 
 def studiengang_als_dict(studiengang: Studiengang) -> dict:
     daten = asdict(studiengang)
-    daten["startdatum"] = studiengang.startdatum.isoformat()
-    daten["zielnote"] = str(studiengang.zielnote) if studiengang.zielnote is not None else None
-    for semester, semester_daten in zip(studiengang.semester, daten["semester"]):
-        for modul, modul_daten in zip(semester.module, semester_daten["module"]):
-            pruefung = modul.pruefungsleistung
-            pruefungsdaten = modul_daten["pruefungsleistung"]
-            pruefungsdaten["termin"] = pruefung.termin.isoformat() if pruefung.termin else None
-            pruefungsdaten["note"] = str(pruefung.note) if pruefung.note is not None else None
+    daten["startdatum"] = daten["startdatum"].isoformat()
+    if daten["zielnote"] is not None:
+        daten["zielnote"] = str(daten["zielnote"])
+    for semester in daten["semester"]:
+        for modul in semester["module"]:
+            pruefung = modul["pruefungsleistung"]
+            if pruefung["termin"] is not None:
+                pruefung["termin"] = pruefung["termin"].isoformat()
+            if pruefung["note"] is not None:
+                pruefung["note"] = str(pruefung["note"])
     return {"studiengang": daten}
 
 
@@ -157,6 +162,7 @@ def speichern(pfad: Path, studiengang: Studiengang, sichern: bool = False) -> No
     daten = studiengang_als_dict(studiengang)
     studiengang_aus_dict(daten)
     pfad.parent.mkdir(parents=True, exist_ok=True)
+    # Erst die fertige Datei ersetzen, damit bei Fehlern die alten Daten erhalten bleiben.
     datei = NamedTemporaryFile(
         mode="w", encoding="utf-8", dir=pfad.parent,
         prefix=".Studiengang-", suffix=".tmp", delete=False,
