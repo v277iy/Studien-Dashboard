@@ -99,6 +99,8 @@ def pruefung_aus_dict(daten) -> Pruefungsleistung:
 
 
 def modul_aus_dict(daten) -> Modul:
+    # Hier werden Dateifelder geprüft und bekannte Altzustände angepasst.
+    # Die vollständige Modulprüfung über angaben_pruefen() findet hier nicht statt.
     daten = objekt(daten, "Modul")
     modul = Modul(
         modulcode=text(daten.get("modulcode"), "Modulcode"),
@@ -108,11 +110,13 @@ def modul_aus_dict(daten) -> Modul:
         pruefungsleistung=pruefung_aus_dict(daten.get("pruefungsleistung")),
     )
     pruefung = modul.pruefungsleistung
-    # Alte Dateien konnten auch ausstehende/nicht bestandene Module als fertig führen.
+    # Alte Dateien konnten auch Module ohne bestandene Prüfung als fertig führen.
+    # Diese werden wieder geöffnet. Bestandene Module in Bearbeitung werden fertig.
     if modul.status == Bearbeitungsstatus.FERTIG and not pruefung.ist_bestanden():
         modul.status = Bearbeitungsstatus.IN_BEARBEITUNG
         if isinstance(pruefung, MehrteiligePruefungsleistung):
             if pruefung.aktueller_abschnitt is None:
+                # Bei alten fertigen Modulen ohne Abschnitt nehmen wir den letzten Abschnitt.
                 pruefung.aktueller_abschnitt = pruefung.anzahl_abschnitte
     elif modul.status == Bearbeitungsstatus.IN_BEARBEITUNG and pruefung.ist_bestanden():
         modul.status = Bearbeitungsstatus.FERTIG
@@ -172,6 +176,8 @@ def laden(pfad: Path) -> Studiengang:
 
 def speichern(pfad: Path, studiengang: Studiengang, sichern: bool = False) -> None:
     daten = studiengang_als_dict(studiengang)
+    # Die Rückumwandlung prüft, ob sich die Daten wieder einlesen lassen.
+    # Dabei angepasste Altzustände werden hier nicht in die Schreibdaten übernommen.
     studiengang_aus_dict(daten)
     pfad.parent.mkdir(parents=True, exist_ok=True)
     # Erst die fertige Datei ersetzen, damit bei Fehlern die alten Daten erhalten bleiben.
@@ -184,6 +190,8 @@ def speichern(pfad: Path, studiengang: Studiengang, sichern: bool = False) -> No
         with datei:
             json.dump(daten, datei, ensure_ascii=False, indent=2, allow_nan=False)
             datei.write("\n")
+        # Die Sicherung enthält den Stand vor dem Ersetzen.
+        # Die Nummerierung schützt vorhandene Sicherungen vor dem Überschreiben.
         if sichern and pfad.exists():
             sicherung = pfad.with_name(pfad.name + ".bak")
             nummer = 1
@@ -193,4 +201,5 @@ def speichern(pfad: Path, studiengang: Studiengang, sichern: bool = False) -> No
             shutil.copy2(pfad, sicherung)
         temporaer.replace(pfad)
     finally:
+        # Auch bei Fehlern aufräumen. Der Fehler wird an den Aufrufer weitergegeben.
         temporaer.unlink(missing_ok=True)

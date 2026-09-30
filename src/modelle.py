@@ -53,6 +53,9 @@ class Pruefungsleistung(ABC):
 
 class EinteiligePruefungsleistung(Pruefungsleistung):
     def fortschritt(self) -> Prozent:
+        # Einteilige Prüfungen haben keine Teilschritte und gibt immer 0% zurück.
+        # Modul.fortschritt prüft vorher ob das Modul FERTIG und die Prüfung
+        # BESTANDEN ist und gibt dann 100% zurück statt diese Methode aufzurufen.
         return Decimal(0)
 
 
@@ -62,6 +65,8 @@ class MehrteiligePruefungsleistung(Pruefungsleistung):
     aktueller_abschnitt: int | None = None
 
     def fortschritt(self) -> Prozent:
+        # Jeder Abschnitt zählt gleich viel. Der aktuelle Abschnitt zählt schon voll mit.
+        # So sind im letzten Abschnitt auch ohne bestandene Prüfung 100 % möglich.
         return Decimal(100) * (self.aktueller_abschnitt or 0) / self.anzahl_abschnitte
 
 
@@ -80,6 +85,7 @@ class Modul:
         )
 
     def fortschritt(self) -> Prozent:
+        # Der Modulstatus hat Vorrang vor dem Abschnittsfortschritt.
         if self.status == Bearbeitungsstatus.NOCH_ZU_TUN:
             return Decimal(0)
         if self.ist_fertig():
@@ -87,6 +93,27 @@ class Modul:
         return self.pruefungsleistung.fortschritt()
 
     def angaben_pruefen(self) -> None:
+        """Prüft die fachliche Konsistenz des Moduls ohne es zu verändern.
+
+        Validierungsregeln:
+        - ECTS müssen eine positive ganze Zahl sein.
+        - Die Prüfungsform muss gültig sein und zur ein- bzw. mehrteiligen
+          Prüfungsleistung passen. Status und Ergebnis müssen bekannt sein.
+        - Bei NOCH_ZU_TUN sind weder eine Note noch ein feststehendes
+          Prüfungsergebnis erlaubt.
+        - FERTIG und BESTANDEN müssen gemeinsam vorliegen.
+        - Eine optionale Note muss ein endlicher Decimal zwischen 1 und 5
+          sein und setzt ein feststehendes Ergebnis voraus. Noten bis 4
+          bedeuten BESTANDEN, Noten über 4 NICHT_BESTANDEN.
+        - Mehrteilige Prüfungen benötigen eine positive ganzzahlige
+          Abschnittszahl. Bei IN_BEARBEITUNG muss der aktuelle
+          Abschnitt eine ganze Zahl zwischen 1 und der Abschnittszahl sein,
+          ansonsten muss er None sein.
+
+        Bei Regelverletzungen wird ValueError ausgelöst. Die Prüfung erfolgt
+        beim Hinzufügen und Aktualisieren über Studiengang, nicht automatisch
+        beim Erzeugen eines Moduls oder bei direkten Attributänderungen.
+        """
         if type(self.ects) is not int or self.ects < 1:
             raise ValueError("ECTS müssen eine positive ganze Zahl sein.")
         pruefung = self.pruefungsleistung
@@ -167,9 +194,11 @@ class Studiengang:
 
     @property
     def enddatum(self) -> date:
+        # Ein Semester wird ab dem Startdatum mit sechs Monaten gerechnet.
         monate = self.startdatum.month - 1 + 6 * self.regelstudienzeit
         jahr = self.startdatum.year + monate // 12
         monat = monate % 12 + 1
+        # Fehlt der ursprüngliche Tag im Zielmonat, nehmen wir dessen letzten Tag.
         tag = min(self.startdatum.day, monthrange(jahr, monat)[1])
         return date(jahr, monat, tag)
 
@@ -194,6 +223,8 @@ class Studiengang:
         return aktuell
 
     def verbleibende_semester(self) -> int:
+        # Zur Regelstudienzeit kommt jede vorhandene höhere Semesternummer einmal dazu.
+        # Fertige Semester werden abgezogen. Leere Semester bleiben offen.
         zusaetzlich = set()
         fertig = set()
         for semester in self.semester:
@@ -234,6 +265,8 @@ class Studiengang:
         altes_semester, altes_modul = self.modul_finden(alter_code)
         if type(semesternummer) is not int:
             raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")
+        # Geladene Zuordnungen außerhalb der Regelstudienzeit bleiben bearbeitbar.
+        # Beim Verschieben muss das Ziel innerhalb der Regelstudienzeit liegen.
         if semesternummer != altes_semester.nummer:
             if not 1 <= semesternummer <= self.regelstudienzeit:
                 raise ValueError(f"Semester muss zwischen 1 und {self.regelstudienzeit} liegen.")

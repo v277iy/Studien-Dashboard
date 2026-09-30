@@ -227,6 +227,8 @@ class ModulDialog(QDialog):
         self.note_geaendert = True
 
     def status_gewaehlt(self) -> None:
+        # FERTIG und BESTANDEN werden zusammen gesetzt.
+        # QSignalBlocker verhindert, dass die Auswahlfelder sich gegenseitig auslösen.
         if self.status.currentData() == Bearbeitungsstatus.FERTIG:
             with QSignalBlocker(self.ergebnis):
                 self.ergebnis.setCurrentIndex(self.ergebnis.findData(Pruefungsergebnis.BESTANDEN))
@@ -237,6 +239,7 @@ class ModulDialog(QDialog):
         self.eingabe_pruefen()
 
     def ergebnis_gewaehlt(self) -> None:
+        # NOCH_ZU_TUN bleibt bestehen. Die Feldaktualisierung setzt das Ergebnis zurück.
         if self.status.currentData() != Bearbeitungsstatus.NOCH_ZU_TUN:
             status = (
                 Bearbeitungsstatus.FERTIG
@@ -271,6 +274,9 @@ class ModulDialog(QDialog):
         self.ok.setEnabled(gueltig)
 
     def bearbeitungsfelder_aktualisieren(self, mehrteilig: bool) -> None:
+        # Status und Ergebnis bestimmen, welche Angaben möglich sind.
+        # Beim Wechsel werden unpassende Angaben zurückgesetzt.
+        # Die 0 zeigt leere Zahlenfelder an. Im Modell stehen fehlende Angaben als None.
         status = self.status.currentData()
         begonnen = status in (Bearbeitungsstatus.IN_BEARBEITUNG, Bearbeitungsstatus.FERTIG)
         aktuell = mehrteilig and status == Bearbeitungsstatus.IN_BEARBEITUNG
@@ -303,6 +309,7 @@ class ModulDialog(QDialog):
         if not benotet:
             self.note.setValue(0)
         elif leer:
+            # Eine neu aktivierte Note bekommt einen zum Ergebnis passenden Vorschlag.
             if ergebnis == Pruefungsergebnis.NICHT_BESTANDEN:
                 self.note.setValue(5)
             else:
@@ -331,7 +338,8 @@ class ModulDialog(QDialog):
                     if self.note_geaendert:
                         pruefung.note = Decimal(self.note.cleanText().replace(",", "."))
                     else:
-                        # Die Anzeige kann genauer gespeicherte Noten runden.
+                        # Ohne Bearbeitung bleibt der genaue Decimal-Wert erhalten.
+                        # Die Umwandlung über das Anzeigefeld kann Nachkommastellen verlieren.
                         pruefung.note = self.note_original
 
         return Modul(
@@ -361,6 +369,7 @@ class ModulDialog(QDialog):
             self.fehler.setText(f"Speichern fehlgeschlagen: {fehler}")
             self.fehler.show()
             return
+        # Die neue Version wird erst nach erfolgreichem Speichern übernommen.
         self.modul = modul
         self.studiengang = neuer_studiengang
         super().accept()
