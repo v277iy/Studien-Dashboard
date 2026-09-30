@@ -1,0 +1,79 @@
+{
+  "studiengang": {
+    "bezeichnung": "B.Sc. Informatik",
+    "regelstudienzeit": 6,
+    "gesamt_ects": 180,
+    "startdatum": "2026-10-01",
+    "zielnote": 2.0,
+    "semester": [
+      {
+        "nummer": 1,
+        "module": [
+          {
+            "modulcode": "MAT-1",
+            "bezeichnung": "Mathematik I",
+            "ects": 5,
+            "status": "NOCH_ZU_TUN",
+            "pruefungsleistung": {
+              "pruefungsform": "Klausur",
+              "termin": "2027-02-15"
+            }
+          },
+          {
+            "modulcode": "OOP-PY",
+            "bezeichnung": "OOP mit Python",
+            "ects": 5,
+            "status": "IN_BEARBEITUNG",
+            "pruefungsleistung": {
+              "pruefungsform": "Portfolio",
+              "anzahl_abschnitte": 4,
+              "aktueller_abschnitt": 2,
+              "ergebnis": "AUSSTEHEND",
+              "note": null
+            }
+          }
+        ]
+      },
+      {
+        "nummer": 2,
+        "module": [
+          {
+            "modulcode": "PROG-1",
+            "bezeichnung": "Programmierung I",
+            "ects": 10,
+            "status": "FERTIG",
+            "pruefungsleistung": {
+              "pruefungsform": "Fallstudie",
+              "ergebnis": "BESTANDEN",
+              "note": 1.7
+            }
+          },
+          {
+            "modulcode": "PROJ-1",
+            "bezeichnung": "Projektpräsentation",
+            "ects": 5,
+            "status": "FERTIG",
+            "pruefungsleistung": {
+              "pruefungsform": "Projektpräsentation",
+              "anzahl_abschnitte": 3,
+              "aktueller_abschnitt": null,
+              "ergebnis": "BESTANDEN",
+              "note": 2.3
+            }
+          },
+          {
+            "modulcode": "DB-1",
+            "bezeichnung": "Datenbanken",
+            "ects": 5,
+            "status": "IN_BEARBEITUNG",
+            "pruefungsleistung": {
+              "pruefungsform": "Klausur",
+              "ergebnis": "NICHT_BESTANDEN",
+              "note": 5.0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
