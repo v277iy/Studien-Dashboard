@@ -2,7 +2,7 @@ from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
 
-from PySide6.QtCore import QDate, QLocale, Qt
+from PySide6.QtCore import QDate, QLocale, QSignalBlocker, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -122,8 +122,8 @@ class ModulDialog(QDialog):
         layout.addWidget(knoepfe)
         if self.alter_code is not None:
             self.werte_laden()
-            self.status.currentIndexChanged.connect(self.eingabe_pruefen)
-            self.ergebnis.currentIndexChanged.connect(self.eingabe_pruefen)
+            self.status.currentIndexChanged.connect(self.status_gewaehlt)
+            self.ergebnis.currentIndexChanged.connect(self.ergebnis_gewaehlt)
             self.termin_festgelegt.toggled.connect(self.eingabe_pruefen)
             self.benotet.toggled.connect(self.eingabe_pruefen)
         self.name.textChanged.connect(self.eingabe_pruefen)
@@ -154,6 +154,7 @@ class ModulDialog(QDialog):
             ("Fertig", Bearbeitungsstatus.FERTIG),
         ):
             self.status.addItem(text, status)
+        self.status.setToolTip("Fertig und das Prüfungsergebnis Bestanden werden gemeinsam gesetzt.")
         self.feld_hinzufuegen("Bearbeitungsstatus", self.status)
         self.aktueller_abschnitt = QSpinBox()
         self.aktueller_abschnitt.setRange(0, self.abschnitte.value())
@@ -225,6 +226,27 @@ class ModulDialog(QDialog):
     def note_bearbeitet(self) -> None:
         self.note_geaendert = True
 
+    def status_gewaehlt(self) -> None:
+        if self.status.currentData() == Bearbeitungsstatus.FERTIG:
+            with QSignalBlocker(self.ergebnis):
+                self.ergebnis.setCurrentIndex(self.ergebnis.findData(Pruefungsergebnis.BESTANDEN))
+        elif self.ergebnis.currentData() == Pruefungsergebnis.BESTANDEN:
+            # Ein bewusst wieder geöffnetes Modul wartet auf ein neues Ergebnis.
+            with QSignalBlocker(self.ergebnis):
+                self.ergebnis.setCurrentIndex(self.ergebnis.findData(Pruefungsergebnis.AUSSTEHEND))
+        self.eingabe_pruefen()
+
+    def ergebnis_gewaehlt(self) -> None:
+        if self.status.currentData() != Bearbeitungsstatus.NOCH_ZU_TUN:
+            status = (
+                Bearbeitungsstatus.FERTIG
+                if self.ergebnis.currentData() == Pruefungsergebnis.BESTANDEN
+                else Bearbeitungsstatus.IN_BEARBEITUNG
+            )
+            with QSignalBlocker(self.status):
+                self.status.setCurrentIndex(self.status.findData(status))
+        self.eingabe_pruefen()
+
     def eingabe_pruefen(self) -> None:
         form = self.pruefungsform.currentData()
         mehrteilig = form is not None and Pruefungsform(form).ist_mehrteilig()
@@ -239,7 +261,10 @@ class ModulDialog(QDialog):
             status = self.status.currentData()
             if status is None:
                 gueltig = False
-            if status == Bearbeitungsstatus.FERTIG and self.ergebnis.currentData() is None:
+            ergebnis = self.ergebnis.currentData()
+            if status != Bearbeitungsstatus.NOCH_ZU_TUN and ergebnis is None:
+                gueltig = False
+            if status == Bearbeitungsstatus.FERTIG and ergebnis != Pruefungsergebnis.BESTANDEN:
                 gueltig = False
         if not self.name.text().strip() or not self.code.text().strip():
             gueltig = False
@@ -247,7 +272,7 @@ class ModulDialog(QDialog):
 
     def bearbeitungsfelder_aktualisieren(self, mehrteilig: bool) -> None:
         status = self.status.currentData()
-        fertig = status == Bearbeitungsstatus.FERTIG
+        begonnen = status in (Bearbeitungsstatus.IN_BEARBEITUNG, Bearbeitungsstatus.FERTIG)
         aktuell = mehrteilig and status == Bearbeitungsstatus.IN_BEARBEITUNG
         self.aktueller_abschnitt.setEnabled(aktuell)
         self.aktuell_label.setEnabled(aktuell)
@@ -256,13 +281,14 @@ class ModulDialog(QDialog):
         if not aktuell:
             self.aktueller_abschnitt.setValue(0)
         self.termin.setEnabled(self.termin_festgelegt.isChecked())
-        self.ergebnis.setEnabled(fertig)
-        self.ergebnis_label.setEnabled(fertig)
-        if not fertig:
-            self.ergebnis.setCurrentIndex(0)
+        self.ergebnis.setEnabled(begonnen)
+        self.ergebnis_label.setEnabled(begonnen)
+        if not begonnen:
+            with QSignalBlocker(self.ergebnis):
+                self.ergebnis.setCurrentIndex(self.ergebnis.findData(Pruefungsergebnis.AUSSTEHEND))
 
         ergebnis = self.ergebnis.currentData()
-        note_erlaubt = fertig and ergebnis in (
+        note_erlaubt = begonnen and ergebnis in (
             Pruefungsergebnis.BESTANDEN, Pruefungsergebnis.NICHT_BESTANDEN
         )
         self.benotet.setEnabled(note_erlaubt)
@@ -298,7 +324,7 @@ class ModulDialog(QDialog):
                 pruefung.termin = self.termin.date().toPython()
             if form.ist_mehrteilig() and status == Bearbeitungsstatus.IN_BEARBEITUNG:
                 pruefung.aktueller_abschnitt = self.aktueller_abschnitt.value()
-            if status == Bearbeitungsstatus.FERTIG:
+            if status != Bearbeitungsstatus.NOCH_ZU_TUN:
                 pruefung.ergebnis = Pruefungsergebnis(self.ergebnis.currentData())
                 if self.benotet.isChecked():
                     self.note.interpretText()

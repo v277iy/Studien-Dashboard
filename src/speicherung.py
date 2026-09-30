@@ -100,13 +100,25 @@ def pruefung_aus_dict(daten) -> Pruefungsleistung:
 
 def modul_aus_dict(daten) -> Modul:
     daten = objekt(daten, "Modul")
-    return Modul(
+    modul = Modul(
         modulcode=text(daten.get("modulcode"), "Modulcode"),
         bezeichnung=text(daten.get("bezeichnung"), "Modulname"),
         ects=ganzzahl(daten.get("ects"), "Modul-ECTS"),
         status=Bearbeitungsstatus(daten.get("status")),
         pruefungsleistung=pruefung_aus_dict(daten.get("pruefungsleistung")),
     )
+    pruefung = modul.pruefungsleistung
+    # Alte Dateien konnten auch ausstehende/nicht bestandene Module als fertig führen.
+    if modul.status == Bearbeitungsstatus.FERTIG and not pruefung.ist_bestanden():
+        modul.status = Bearbeitungsstatus.IN_BEARBEITUNG
+        if isinstance(pruefung, MehrteiligePruefungsleistung):
+            if pruefung.aktueller_abschnitt is None:
+                pruefung.aktueller_abschnitt = pruefung.anzahl_abschnitte
+    elif modul.status == Bearbeitungsstatus.IN_BEARBEITUNG and pruefung.ist_bestanden():
+        modul.status = Bearbeitungsstatus.FERTIG
+    if modul.status == Bearbeitungsstatus.FERTIG and isinstance(pruefung, MehrteiligePruefungsleistung):
+        pruefung.aktueller_abschnitt = None
+    return modul
 
 
 def semester_aus_dict(daten) -> Semester:

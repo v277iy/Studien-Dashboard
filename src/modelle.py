@@ -73,10 +73,16 @@ class Modul:
     status: Bearbeitungsstatus
     pruefungsleistung: Pruefungsleistung
 
+    def ist_fertig(self) -> bool:
+        return (
+            self.status == Bearbeitungsstatus.FERTIG
+            and self.pruefungsleistung.ist_bestanden()
+        )
+
     def fortschritt(self) -> Prozent:
         if self.status == Bearbeitungsstatus.NOCH_ZU_TUN:
             return Decimal(0)
-        if self.status == Bearbeitungsstatus.FERTIG:
+        if self.ist_fertig():
             return Decimal(100)
         return self.pruefungsleistung.fortschritt()
 
@@ -93,9 +99,13 @@ class Modul:
             raise ValueError("Unbekannter Bearbeitungsstatus.")
         if pruefung.ergebnis not in Pruefungsergebnis:
             raise ValueError("Unbekanntes Prüfungsergebnis.")
-        if self.status != Bearbeitungsstatus.FERTIG:
+        if self.status == Bearbeitungsstatus.NOCH_ZU_TUN:
             if pruefung.note is not None or pruefung.ergebnis != Pruefungsergebnis.AUSSTEHEND:
-                raise ValueError("Ergebnis und Note sind erst nach Abschluss möglich.")
+                raise ValueError("Ergebnis und Note sind erst in Bearbeitung möglich.")
+        if self.status == Bearbeitungsstatus.FERTIG and not pruefung.ist_bestanden():
+            raise ValueError("Ein Modul ist erst mit bestandener Prüfung fertig.")
+        if pruefung.ist_bestanden() and self.status != Bearbeitungsstatus.FERTIG:
+            raise ValueError("Ein bestandenes Modul muss als fertig markiert sein.")
         if pruefung.note is not None:
             if (
                 not isinstance(pruefung.note, Decimal)
@@ -129,7 +139,7 @@ class Semester:
         if not self.module:
             return False
         for modul in self.module:
-            if modul.status != Bearbeitungsstatus.FERTIG:
+            if not modul.ist_fertig():
                 return False
         return True
 
