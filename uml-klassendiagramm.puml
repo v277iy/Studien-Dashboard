@@ -4,56 +4,53 @@ title UML-Klassendiagramm des Studien-Dashboards
 hide circle
 skinparam classAttributeIconSize 0
 
-class Studiengang <<Entity>> {
-  - bezeichnung: String
-  - startdatum: Date
-  - regelstudienzeit: Integer
-  - gesamtECTS: Integer
-  - zielnote: Decimal
-  + ectsFortschritt(): Prozent
-  + notendurchschnitt(): Decimal [0..1]
-  + verbleibendeSemester(): Integer
+class Studiengang {
+  + bezeichnung: str
+  + startdatum: date
+  + regelstudienzeit: int
+  + /enddatum: date
+  + gesamt_ects: int
+  + zielnote: Decimal [0..1]
+  + verbleibende_tage()
+  + notendurchschnitt()
+  + ects_fortschritt()
+  + modul_hinzufuegen(modul, semesternummer)
+  + modul_aktualisieren(alter_code, modul, semesternummer): None
 }
 
-class Semester <<Entity>> {
-  - nummer: Integer
-  - beginn: Date
-  - ende: Date
-  + erreichteECTS(): Integer
+class Semester {
+  + nummer: int
+  + ist_fertig()
 }
 
-class Modul <<Entity>> {
-  - modulcode: String
-  - bezeichnung: String
-  - ects: Integer
-  - status: Bearbeitungsstatus
+class Modul {
+  + modulcode: str
+  + bezeichnung: str
+  + ects: int
+  + status: Bearbeitungsstatus
   + fortschritt(): Prozent
 }
 
-abstract class "Prüfungsleistung" as Pruefungsleistung <<Entity>> {
-  - termin: Date [0..1]
-  - note: Decimal [0..1]
-  - ergebnis: Prüfungsergebnis [0..1]
+abstract class Pruefungsleistung {
+  + termin: date [0..1]
+  + note: Decimal [0..1]
+  + ergebnis: Pruefungsergebnis
+  + pruefungsform: Pruefungsform
   {abstract} + fortschritt(): Prozent
-  + istBestanden(): Boolean
+  + ist_bestanden(): bool
 }
 
-abstract class "Einteilige Prüfungsleistung" as EinteiligePruefungsleistung <<Entity>> {
+class EinteiligePruefungsleistung {
   + fortschritt(): Prozent
 }
 
-abstract class "Mehrteilige Prüfungsleistung" as MehrteiligePruefungsleistung <<Entity>> {
-  - anzahlAbschnitte: Integer
-  - aktuellerAbschnitt: Integer [0..1]
+class MehrteiligePruefungsleistung {
+  + anzahl_abschnitte: int
+  + aktueller_abschnitt: int [0..1]
   + fortschritt(): Prozent
 }
 
-class Klausur <<Entity>>
-class Fallstudie <<Entity>>
-class Portfolio <<Entity>>
-class "Projektpräsentation" as Projektpraesentation <<Entity>>
-
-enum "Prüfungsergebnis" as Pruefungsergebnis {
+enum Pruefungsergebnis {
   AUSSTEHEND
   BESTANDEN
   NICHT_BESTANDEN
@@ -65,19 +62,25 @@ enum Bearbeitungsstatus {
   FERTIG
 }
 
-' Komposition und Aggregation mit Multiplizitäten
-Studiengang "1" *-right- "1..*" Semester : besteht aus
-Semester "1" o-right- "0..*" Modul : ordnet zu
-Modul "1" *-- "1" Pruefungsleistung : besitzt
+enum Pruefungsform {
+  KLAUSUR
+  FALLSTUDIE
+  PORTFOLIO
+  PROJEKTPRAESENTATION
+}
 
-' Vererbung der Prüfungsformen
+' Komposition und Aggregation mit Multiplizitäten
+Studiengang "1" *-right- "0..*" Semester
+Semester "1" o-right- "0..*" Modul
+Modul "1" *-- "1" Pruefungsleistung
+
+' Vererbung der Prüfungsleistungen
 Pruefungsleistung <|-- EinteiligePruefungsleistung
 Pruefungsleistung <|-- MehrteiligePruefungsleistung
 
-' Vererbung der konkreten Prüfungsarten
-EinteiligePruefungsleistung <|-- Klausur
-EinteiligePruefungsleistung <|-- Fallstudie
-MehrteiligePruefungsleistung <|-- Portfolio
-MehrteiligePruefungsleistung <|-- Projektpraesentation
+' Abhängigkeiten von den Enums
+Modul ..> Bearbeitungsstatus
+Pruefungsleistung ..> Pruefungsergebnis
+Pruefungsleistung ..> Pruefungsform
 
 @enduml

@@ -1,203 +1,180 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1530" height="1120" viewBox="0 0 1530 1120">
-  <title>UML-Klassendiagramm des Studien-Dashboards</title>
-  <desc>Entity-Klassen Studiengang, Semester, Modul und Prüfungsleistung mit einteiligen, mehrteiligen und konkreten Prüfungsarten sowie Komposition, Aggregation, Status- und Ergebniswerten.</desc>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="1210" height="1180" viewBox="-30 744 1210 1180" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">UML-Klassendiagramm des Studien-Dashboards</title>
+  <desc id="diagram-desc">Fachmodell aus uml-gesamtarchitektur.svg mit Studiengang, Semester, Modul, der abstrakten Pruefungsleistung und ihren konkreten Unterklassen EinteiligePruefungsleistung und MehrteiligePruefungsleistung sowie den Enums Pruefungsergebnis, Bearbeitungsstatus und Pruefungsform. Studiengang und Semester sowie Modul und Pruefungsleistung sind durch Komposition verbunden. Die Aggregation Semester–Modul stellt die veränderbare Zuordnung dar. Fachliche Attribute stehen in den Klassenkästen oder werden durch Beziehungen dargestellt.</desc>
   <defs>
     <style>
-      .box { fill: #ffffff; stroke: #334155; stroke-width: 2.5; }
+      text { font-family: "Liberation Sans", Arial, sans-serif; fill: #172033; }
+      .section { fill: #f8fafc; stroke: #d7e0ea; stroke-width: 1.5; }
+      .section-title { font-size: 25px; font-weight: 700; fill: #334155; }
+      .box { fill: #ffffff; stroke: #334155; stroke-width: 2.2; }
       .header { fill: #e8eef7; }
-      .separator { stroke: #334155; stroke-width: 2; }
-      .relation { fill: none; stroke: #334155; stroke-width: 2.8; stroke-linecap: square; stroke-linejoin: miter; }
+      .abstract-header { fill: #eef0fa; }
+      .enum-header { fill: #f0f3f6; }
+      .outline { fill: none; stroke: #334155; stroke-width: 2.2; }
+      .separator { stroke: #8493a5; stroke-width: 1.5; }
+      .name { font-size: 26px; font-weight: 700; text-anchor: middle; }
+      .abstract-name { font-size: 26px; font-weight: 700; font-style: italic; text-anchor: middle; }
+      .stereotype { font-size: 20px; text-anchor: middle; fill: #526176; }
+      .member { font-size: 24px; }
+      .abstract-member { font-size: 24px; font-style: italic; }
+      .relation { fill: none; stroke: #334155; stroke-width: 2.5; stroke-linejoin: round; }
+      .dependency { fill: none; stroke: #526176; stroke-width: 2.2; stroke-dasharray: 8 6; stroke-linejoin: round; }
       .diamond-filled { fill: #334155; stroke: #334155; stroke-width: 2.2; }
-      .diamond-open { fill: #ffffff; stroke: #334155; stroke-width: 2.2; }
-      .inheritance { fill: #ffffff; stroke: #334155; stroke-width: 2.8; }
-      .stereotype { font-family: "Liberation Sans", Arial, sans-serif; font-size: 16px; font-style: italic; fill: #475569; text-anchor: middle; }
-      .class-name { font-family: "Liberation Sans", Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #172033; text-anchor: middle; }
-      .member { font-family: "Liberation Sans", Arial, sans-serif; font-size: 18px; fill: #1f2937; }
-      .abstract-member { font-family: "Liberation Sans", Arial, sans-serif; font-size: 18px; font-style: italic; fill: #1f2937; }
-      .association-label { font-family: "Liberation Sans", Arial, sans-serif; font-size: 20px; font-weight: 600; fill: #334155; text-anchor: middle; }
-      .multiplicity { font-family: "Liberation Sans", Arial, sans-serif; font-size: 20px; font-weight: 700; fill: #334155; text-anchor: middle; }
+      .diamond-open, .inheritance { fill: #ffffff; stroke: #334155; stroke-width: 2.5; }
+      .multiplicity { font-size: 22px; font-weight: 700; fill: #334155; }
     </style>
+    <marker id="use-arrow" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M2 1 L13 7 L2 13" fill="none" stroke="#526176" stroke-width="2.2" stroke-linejoin="round"/>
+    </marker>
   </defs>
-  <rect width="1530" height="1120" fill="#ffffff"/>
 
-  <!-- Beziehungen der oberen Ebene -->
-  <path class="relation" d="M420 170 H560"/>
-  <polygon class="diamond-filled" points="420,170 436,157 452,170 436,183"/>
-  <text x="490" y="149" class="association-label">besteht aus</text>
-  <text x="430" y="202" class="multiplicity">1</text>
-  <text x="530" y="202" class="multiplicity">1..*</text>
+  <rect x="-30" y="744" width="1210" height="1180" fill="#ffffff"/>
+  <text x="30" y="774" class="section-title">Fachmodell</text>
+  <rect x="-16" y="786" width="1182" height="1122" rx="8" class="section"/>
 
-  <path class="relation" d="M900 150 H1050"/>
-  <polygon class="diamond-open" points="900,150 916,137 932,150 916,163"/>
-  <text x="975" y="129" class="association-label">ordnet zu</text>
-  <text x="910" y="182" class="multiplicity">1</text>
-  <text x="1020" y="182" class="multiplicity">0..*</text>
+  <g id="fachliche-beziehungen" transform="translate(0 48)">
+    <path class="relation" d="M400 835 H460"/>
+    <polygon class="diamond-filled" points="380,835 390,827 400,835 390,843"/>
+    <text x="395" y="821" class="multiplicity">1</text>
+    <text x="449" y="863" text-anchor="end" class="multiplicity">0..*</text>
 
-  <!-- Komposition Modul/Prüfungsleistung -->
-  <path class="relation" d="M1280 265 V350 H775 V390"/>
-  <polygon class="diamond-filled" points="1280,265 1293,279 1280,293 1267,279"/>
-  <text x="1027.5" y="338" class="association-label">besitzt</text>
-  <text x="1306" y="311" class="multiplicity">1</text>
-  <text x="796" y="379" class="multiplicity">1</text>
+    <path id="aggregation-Semester-Modul" class="relation" d="M710 835 H770"/>
+    <polygon class="diamond-open" points="690,835 700,827 710,835 700,843"/>
+    <text x="705" y="821" class="multiplicity">1</text>
+    <text x="759" y="863" text-anchor="end" class="multiplicity">0..*</text>
 
-  <!-- Vererbung der Prüfungsformen -->
-  <path class="relation" d="M775 714 V728 H550 M775 728 H1165 M550 728 V750 M1165 728 V750"/>
-  <polygon class="inheritance" points="775,690 759,714 791,714"/>
+    <path class="relation" d="M945 994 V1258 H575 V1280"/>
+    <polygon class="diamond-filled" points="945,970 953,982 945,994 937,982"/>
+    <text x="963" y="1005" class="multiplicity">1</text>
+    <text x="556" y="1268" text-anchor="end" class="multiplicity">1</text>
 
-  <!-- Vererbung der konkreten Prüfungsarten -->
-  <path class="relation" d="M550 909 V960 H410 M550 960 H675 M410 960 V1000 M675 960 V1000"/>
-  <polygon class="inheritance" points="550,885 534,909 566,909"/>
-  <path class="relation" d="M1165 954 V975 H1015 M1165 975 H1350 M1015 975 V1000 M1350 975 V1000"/>
-  <polygon class="inheritance" points="1165,930 1149,954 1181,954"/>
+    <path class="dependency" d="M1120 901 H1136 V1260 H977 V1280" marker-end="url(#use-arrow)"/>
+    <path class="dependency" transform="translate(0 260)" d="M375 1150 H330" marker-end="url(#use-arrow)"/>
 
-  <!-- Studiengang -->
-  <g>
-    <rect x="20" y="20" width="400" height="320" rx="3" class="box"/>
-    <path d="M23 20 H417 A3 3 0 0 1 420 23 V85 H20 V23 A3 3 0 0 1 23 20 Z" class="header"/>
-    <line x1="20" y1="85" x2="420" y2="85" class="separator"/>
-    <text x="220" y="45" class="stereotype">«Entity»</text>
-    <text x="220" y="72" class="class-name">Studiengang</text>
-
-    <text x="38" y="113" class="member">− bezeichnung: String</text>
-    <text x="38" y="139" class="member">− startdatum: Date</text>
-    <text x="38" y="165" class="member">− regelstudienzeit: Integer</text>
-    <text x="38" y="191" class="member">− gesamtECTS: Integer</text>
-    <text x="38" y="217" class="member">− zielnote: Decimal</text>
-
-    <line x1="20" y1="234" x2="420" y2="234" class="separator"/>
-    <text x="38" y="263" class="member">+ ectsFortschritt(): Prozent</text>
-    <text x="38" y="289" class="member">+ notendurchschnitt(): Decimal [0..1]</text>
-    <text x="38" y="315" class="member">+ verbleibendeSemester(): Integer</text>
+    <path class="relation" transform="translate(0 288)" d="M575 1252 V1258 H290 V1264 M575 1258 H860 V1264"/>
+    <polygon class="inheritance" transform="translate(0 288)" points="575,1232 562,1252 588,1252"/>
+    <path class="dependency" transform="translate(0 260)" d="M375 1178 H352 V1246 H8 V1536 H30" marker-end="url(#use-arrow)"/>
   </g>
 
-  <!-- Semester -->
-  <g>
-    <rect x="560" y="20" width="340" height="220" rx="3" class="box"/>
-    <path d="M563 20 H897 A3 3 0 0 1 900 23 V85 H560 V23 A3 3 0 0 1 563 20 Z" class="header"/>
-    <line x1="560" y1="85" x2="900" y2="85" class="separator"/>
-    <text x="730" y="45" class="stereotype">«Entity»</text>
-    <text x="730" y="72" class="class-name">Semester</text>
-
-    <text x="578" y="113" class="member">− nummer: Integer</text>
-    <text x="578" y="139" class="member">− beginn: Date</text>
-    <text x="578" y="165" class="member">− ende: Date</text>
-
-    <line x1="560" y1="182" x2="900" y2="182" class="separator"/>
-    <text x="578" y="211" class="member">+ erreichteECTS(): Integer</text>
+  <g id="class-Studiengang" data-class="Studiengang" data-box="30 758 350 464" transform="translate(0 48)">
+    <rect x="30" y="758" width="350" height="464" rx="4" class="box"/>
+    <path d="M34 758 H376 Q380 758 380 762 V804 H30 V762 Q30 758 34 758 Z" class="header"/>
+    <text x="205" y="790" class="name">Studiengang</text>
+    <line x1="30" y1="804" x2="380" y2="804" class="separator"/>
+    <text x="48" y="833" class="member">+ bezeichnung: str</text>
+    <text x="48" y="861" class="member">+ startdatum: date</text>
+    <text x="48" y="889" class="member">+ regelstudienzeit: int</text>
+    <text x="48" y="917" class="member">+ /enddatum: date</text>
+    <text x="48" y="945" class="member">+ gesamt_ects: int</text>
+    <text x="48" y="973" class="member">+ zielnote: Decimal [0..1]</text>
+    <line x1="30" y1="987" x2="380" y2="987" class="separator"/>
+    <text x="48" y="1014" class="member">+ verbleibende_tage()</text>
+    <text x="48" y="1042" class="member">+ notendurchschnitt()</text>
+    <text x="48" y="1070" class="member">+ ects_fortschritt()</text>
+    <text x="48" y="1098" class="member">+ modul_hinzufuegen(</text>
+    <text x="68" y="1126" class="member">modul, semesternummer)</text>
+    <text x="48" y="1154" class="member">+ modul_aktualisieren(</text>
+    <text x="68" y="1182" class="member">alter_code, modul,</text>
+    <text x="68" y="1210" class="member">semesternummer): None</text>
+    <rect x="30" y="758" width="350" height="464" rx="4" class="outline"/>
   </g>
 
-  <!-- Modul -->
-  <g>
-    <rect x="1050" y="20" width="460" height="245" rx="3" class="box"/>
-    <path d="M1053 20 H1507 A3 3 0 0 1 1510 23 V85 H1050 V23 A3 3 0 0 1 1053 20 Z" class="header"/>
-    <line x1="1050" y1="85" x2="1510" y2="85" class="separator"/>
-    <text x="1280" y="45" class="stereotype">«Entity»</text>
-    <text x="1280" y="72" class="class-name">Modul</text>
-
-    <text x="1068" y="113" class="member">− modulcode: String</text>
-    <text x="1068" y="139" class="member">− bezeichnung: String</text>
-    <text x="1068" y="165" class="member">− ects: Integer</text>
-    <text x="1068" y="191" class="member">− status: Bearbeitungsstatus</text>
-
-    <line x1="1050" y1="208" x2="1510" y2="208" class="separator"/>
-    <text x="1068" y="240" class="member">+ fortschritt(): Prozent</text>
+  <g id="class-Semester" data-class="Semester" data-box="460 758 230 140" transform="translate(0 48)">
+    <rect x="460" y="758" width="230" height="140" rx="4" class="box"/>
+    <path d="M464 758 H686 Q690 758 690 762 V804 H460 V762 Q460 758 464 758 Z" class="header"/>
+    <text x="575" y="790" class="name">Semester</text>
+    <line x1="460" y1="804" x2="690" y2="804" class="separator"/>
+    <text x="478" y="833" class="member">+ nummer: int</text>
+    <line x1="460" y1="849" x2="690" y2="849" class="separator"/>
+    <text x="478" y="879" class="member">+ ist_fertig()</text>
+    <rect x="460" y="758" width="230" height="140" rx="4" class="outline"/>
   </g>
 
-  <!-- Abstrakte Prüfungsleistung -->
-  <g>
-    <rect x="465" y="390" width="620" height="300" rx="3" class="box"/>
-    <path d="M468 390 H1082 A3 3 0 0 1 1085 393 V455 H465 V393 A3 3 0 0 1 468 390 Z" class="header"/>
-    <line x1="465" y1="455" x2="1085" y2="455" class="separator"/>
-    <text x="775" y="415" class="stereotype">«Entity»</text>
-    <text x="775" y="442" class="class-name" font-style="italic">Prüfungsleistung</text>
-
-    <text x="483" y="488" class="member">− termin: Date [0..1]</text>
-    <text x="483" y="520" class="member">− note: Decimal [0..1]</text>
-    <text x="483" y="552" class="member">− ergebnis: Prüfungsergebnis [0..1]</text>
-
-    <line x1="465" y1="575" x2="1085" y2="575" class="separator"/>
-    <text x="483" y="610" class="abstract-member">+ fortschritt(): Prozent {abstract}</text>
-    <text x="483" y="645" class="member">+ istBestanden(): Boolean</text>
+  <g id="class-Modul" data-class="Modul" data-box="770 758 350 212" transform="translate(0 48)">
+    <rect x="770" y="758" width="350" height="212" rx="4" class="box"/>
+    <path d="M774 758 H1116 Q1120 758 1120 762 V804 H770 V762 Q770 758 774 758 Z" class="header"/>
+    <text x="945" y="790" class="name">Modul</text>
+    <line x1="770" y1="804" x2="1120" y2="804" class="separator"/>
+    <text x="788" y="833" class="member">+ modulcode: str</text>
+    <text x="788" y="861" class="member">+ bezeichnung: str</text>
+    <text x="788" y="889" class="member">+ ects: int</text>
+    <text x="788" y="917" class="member">+ status: Bearbeitungsstatus</text>
+    <line x1="770" y1="931" x2="1120" y2="931" class="separator"/>
+    <text x="788" y="958" class="member">+ fortschritt(): Prozent</text>
+    <rect x="770" y="758" width="350" height="212" rx="4" class="outline"/>
   </g>
 
-  <!-- Ergebnis-Enumeration -->
-  <g>
-    <rect x="20" y="430" width="270" height="195" rx="3" class="box"/>
-    <path d="M23 430 H287 A3 3 0 0 1 290 433 V505 H20 V433 A3 3 0 0 1 23 430 Z" class="header"/>
-    <line x1="20" y1="505" x2="290" y2="505" class="separator"/>
-    <text x="155" y="456" class="stereotype">«enumeration»</text>
-    <text x="155" y="485" class="class-name" font-size="20">Prüfungsergebnis</text>
-    <text x="38" y="538" class="member">AUSSTEHEND</text>
-    <text x="38" y="570" class="member">BESTANDEN</text>
-    <text x="38" y="602" class="member">NICHT_BESTANDEN</text>
+  <g id="class-Pruefungsergebnis" data-class="Pruefungsergebnis" data-box="30 1020 300 166" transform="translate(0 308)">
+    <rect x="30" y="1020" width="300" height="166" rx="4" class="box"/>
+    <path d="M34 1020 H326 Q330 1020 330 1024 V1084 H30 V1024 Q30 1020 34 1020 Z" class="enum-header"/>
+    <text x="180" y="1043" class="stereotype">«Enum»</text>
+    <text x="180" y="1071" class="name">Pruefungsergebnis</text>
+    <line x1="30" y1="1084" x2="330" y2="1084" class="separator"/>
+    <text x="48" y="1115" class="member">AUSSTEHEND</text>
+    <text x="48" y="1144" class="member">BESTANDEN</text>
+    <text x="48" y="1173" class="member">NICHT_BESTANDEN</text>
+    <rect x="30" y="1020" width="300" height="166" rx="4" class="outline"/>
   </g>
 
-
-  <!-- Status-Enumeration -->
-  <g>
-    <rect x="20" y="725" width="235" height="200" rx="3" class="box"/>
-    <path d="M23 725 H252 A3 3 0 0 1 255 728 V800 H20 V728 A3 3 0 0 1 23 725 Z" class="header"/>
-    <line x1="20" y1="800" x2="255" y2="800" class="separator"/>
-    <text x="137.5" y="751" class="stereotype">«enumeration»</text>
-    <text x="137.5" y="780" class="class-name" font-size="20">Bearbeitungsstatus</text>
-    <text x="38" y="833" class="member">NOCH_ZU_TUN</text>
-    <text x="38" y="865" class="member">IN_BEARBEITUNG</text>
-    <text x="38" y="897" class="member">FERTIG</text>
+  <g id="class-Pruefungsleistung" data-class="Pruefungsleistung" data-box="375 1020 400 240" transform="translate(0 308)">
+    <rect x="375" y="1020" width="400" height="240" rx="4" class="box"/>
+    <path d="M379 1020 H771 Q775 1020 775 1024 V1066 H375 V1024 Q375 1020 379 1020 Z" class="abstract-header"/>
+    <text x="575" y="1052" class="abstract-name">Pruefungsleistung</text>
+    <line x1="375" y1="1066" x2="775" y2="1066" class="separator"/>
+    <text x="393" y="1094" class="member">+ termin: date [0..1]</text>
+    <text x="393" y="1122" class="member">+ note: Decimal [0..1]</text>
+    <text x="393" y="1150" class="member">+ ergebnis: Pruefungsergebnis</text>
+    <text x="393" y="1178" class="member">+ pruefungsform: Pruefungsform</text>
+    <line x1="375" y1="1191" x2="775" y2="1191" class="separator"/>
+    <text x="393" y="1218" class="abstract-member">+ fortschritt(): Prozent</text>
+    <text x="393" y="1246" class="member">+ ist_bestanden(): bool</text>
+    <rect x="375" y="1020" width="400" height="240" rx="4" class="outline"/>
   </g>
 
-  <!-- Abstrakte einteilige Prüfungsleistung -->
-  <g>
-    <rect x="300" y="750" width="500" height="135" rx="3" class="box"/>
-    <path d="M303 750 H797 A3 3 0 0 1 800 753 V815 H300 V753 A3 3 0 0 1 303 750 Z" class="header"/>
-    <line x1="300" y1="815" x2="800" y2="815" class="separator"/>
-    <text x="550" y="775" class="stereotype">«Entity»</text>
-    <text x="550" y="802" class="class-name" font-size="20" font-style="italic">Einteilige Prüfungsleistung</text>
-    <text x="318" y="853" class="member">+ fortschritt(): Prozent</text>
+  <g id="class-Bearbeitungsstatus" data-class="Bearbeitungsstatus" data-box="835 1020 285 166" transform="translate(0 308)">
+    <rect x="835" y="1020" width="285" height="166" rx="4" class="box"/>
+    <path d="M839 1020 H1116 Q1120 1020 1120 1024 V1084 H835 V1024 Q835 1020 839 1020 Z" class="enum-header"/>
+    <text x="977.5" y="1043" class="stereotype">«Enum»</text>
+    <text x="977.5" y="1071" class="name">Bearbeitungsstatus</text>
+    <line x1="835" y1="1084" x2="1120" y2="1084" class="separator"/>
+    <text x="853" y="1115" class="member">NOCH_ZU_TUN</text>
+    <text x="853" y="1144" class="member">IN_BEARBEITUNG</text>
+    <text x="853" y="1173" class="member">FERTIG</text>
+    <rect x="835" y="1020" width="285" height="166" rx="4" class="outline"/>
   </g>
 
-  <!-- Abstrakte mehrteilige Prüfungsleistung -->
-  <g>
-    <rect x="820" y="750" width="690" height="180" rx="3" class="box"/>
-    <path d="M823 750 H1507 A3 3 0 0 1 1510 753 V815 H820 V753 A3 3 0 0 1 823 750 Z" class="header"/>
-    <line x1="820" y1="815" x2="1510" y2="815" class="separator"/>
-    <text x="1165" y="775" class="stereotype">«Entity»</text>
-    <text x="1165" y="802" class="class-name" font-style="italic">Mehrteilige Prüfungsleistung</text>
-    <text x="838" y="844" class="member">− anzahlAbschnitte: Integer</text>
-    <text x="838" y="870" class="member">− aktuellerAbschnitt: Integer [0..1]</text>
-    <line x1="820" y1="887" x2="1510" y2="887" class="separator"/>
-    <text x="838" y="917" class="member">+ fortschritt(): Prozent</text>
+  <g id="class-EinteiligePruefungsleistung" data-class="EinteiligePruefungsleistung" data-box="30 1292 520 98" transform="translate(0 308)">
+    <rect x="30" y="1292" width="520" height="98" rx="4" class="box"/>
+    <path d="M34 1292 H546 Q550 1292 550 1296 V1340 H30 V1296 Q30 1292 34 1292 Z" class="header"/>
+    <text x="290" y="1326" class="name">EinteiligePruefungsleistung</text>
+    <line x1="30" y1="1340" x2="550" y2="1340" class="separator"/>
+    <text x="48" y="1372" class="member">+ fortschritt(): Prozent</text>
+    <rect x="30" y="1292" width="520" height="98" rx="4" class="outline"/>
   </g>
 
-  <!-- Konkrete einteilige Prüfungsarten -->
-  <g>
-    <rect x="300" y="1000" width="220" height="90" rx="3" class="box"/>
-    <path d="M303 1000 H517 A3 3 0 0 1 520 1003 V1065 H300 V1003 A3 3 0 0 1 303 1000 Z" class="header"/>
-    <line x1="300" y1="1065" x2="520" y2="1065" class="separator"/>
-    <text x="410" y="1025" class="stereotype">«Entity»</text>
-    <text x="410" y="1052" class="class-name">Klausur</text>
-  </g>
-  <g>
-    <rect x="550" y="1000" width="250" height="90" rx="3" class="box"/>
-    <path d="M553 1000 H797 A3 3 0 0 1 800 1003 V1065 H550 V1003 A3 3 0 0 1 553 1000 Z" class="header"/>
-    <line x1="550" y1="1065" x2="800" y2="1065" class="separator"/>
-    <text x="675" y="1025" class="stereotype">«Entity»</text>
-    <text x="675" y="1052" class="class-name" font-size="20">Fallstudie</text>
+  <g id="class-MehrteiligePruefungsleistung" data-class="MehrteiligePruefungsleistung" data-box="600 1292 520 170" transform="translate(0 308)">
+    <rect x="600" y="1292" width="520" height="170" rx="4" class="box"/>
+    <path d="M604 1292 H1116 Q1120 1292 1120 1296 V1340 H600 V1296 Q600 1292 604 1292 Z" class="header"/>
+    <text x="860" y="1326" class="name">MehrteiligePruefungsleistung</text>
+    <line x1="600" y1="1340" x2="1120" y2="1340" class="separator"/>
+    <text x="618" y="1372" class="member">+ anzahl_abschnitte: int</text>
+    <text x="618" y="1401" class="member">+ aktueller_abschnitt: int [0..1]</text>
+    <line x1="600" y1="1414" x2="1120" y2="1414" class="separator"/>
+    <text x="618" y="1443" class="member">+ fortschritt(): Prozent</text>
+    <rect x="600" y="1292" width="520" height="170" rx="4" class="outline"/>
   </g>
 
-  <!-- Konkrete mehrteilige Prüfungsarten -->
-  <g>
-    <rect x="900" y="1000" width="230" height="90" rx="3" class="box"/>
-    <path d="M903 1000 H1127 A3 3 0 0 1 1130 1003 V1065 H900 V1003 A3 3 0 0 1 903 1000 Z" class="header"/>
-    <line x1="900" y1="1065" x2="1130" y2="1065" class="separator"/>
-    <text x="1015" y="1025" class="stereotype">«Entity»</text>
-    <text x="1015" y="1052" class="class-name" font-size="20">Portfolio</text>
+  <g id="class-Pruefungsform" data-class="Pruefungsform" data-box="30 1502 1090 110" transform="translate(0 284)">
+    <rect x="30" y="1502" width="1090" height="110" rx="4" class="box"/>
+    <path d="M34 1502 H1116 Q1120 1502 1120 1506 V1566 H30 V1506 Q30 1502 34 1502 Z" class="enum-header"/>
+    <text x="575" y="1525" class="stereotype">«Enum»</text>
+    <text x="575" y="1553" class="name">Pruefungsform</text>
+    <line x1="30" y1="1566" x2="1120" y2="1566" class="separator"/>
+    <text x="48" y="1597" class="member">KLAUSUR</text>
+    <text x="260" y="1597" class="member">FALLSTUDIE</text>
+    <text x="490" y="1597" class="member">PORTFOLIO</text>
+    <text x="730" y="1597" class="member">PROJEKTPRAESENTATION</text>
+    <rect x="30" y="1502" width="1090" height="110" rx="4" class="outline"/>
   </g>
-  <g>
-    <rect x="1190" y="1000" width="320" height="90" rx="3" class="box"/>
-    <path d="M1193 1000 H1507 A3 3 0 0 1 1510 1003 V1065 H1190 V1003 A3 3 0 0 1 1193 1000 Z" class="header"/>
-    <line x1="1190" y1="1065" x2="1510" y2="1065" class="separator"/>
-    <text x="1350" y="1025" class="stereotype">«Entity»</text>
-    <text x="1350" y="1052" class="class-name" font-size="18">Projektpräsentation</text>
-  </g>
+
 </svg>

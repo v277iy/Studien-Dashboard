@@ -1,0 +1,153 @@
+@startuml
+title Gesamtarchitektur des Studien-Dashboards
+
+hide circle
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' 14 Anwendungsklassen einschließlich Enums sowie zwei Python-Module.
+' Qt-Basisklassen stehen wie im SVG an den Klassen, nicht als eigene Knoten.
+' Die mit «Modul» markierten Kästen repräsentieren keine Anwendungsklassen.
+package "Programmstart und Oberfläche" as Oberflaeche {
+  class StudiengangDialog <<Qt-Basis: QDialog>> {
+    + studiengang: Studiengang [0..1]
+    + accept()
+  }
+
+  class DashboardFenster <<Qt-Basis: QMainWindow>> {
+    + studiengang: Studiengang
+    + aktualisieren()
+    + modul_dialog_oeffnen()
+  }
+
+  class "Programmstart\nmain.py" as main <<Modul>> {
+    + main()
+    + studiengang_oeffnen(pfad): Studiengang [0..1]
+  }
+
+  class Modulleiste <<Qt-Basis: QFrame>> {
+    {field} + modul_gewaehlt: Signal(str)
+    {field} + neues_modul: Signal()
+    + anzeigen(module)
+  }
+
+  class ModulKarte <<Qt-Basis: QFrame>> {
+    + modulcode: str
+    {field} + ausgewaehlt: Signal(str)
+  }
+
+  class ModulDialog <<Qt-Basis: QDialog>> {
+    + studiengang: Studiengang
+    + modul: Modul [0..1]
+    + eingabe_pruefen()
+    + accept()
+  }
+}
+
+class "Speichermodul\nspeicherung.py" as speicherung <<Modul>> {
+  + laden(pfad): Studiengang
+  + speichern(pfad, studiengang)
+}
+
+package "Fachmodell" as Fachmodell {
+  class Studiengang {
+    + bezeichnung: str
+    + startdatum: date
+    + regelstudienzeit: int
+    + /enddatum: date
+    + gesamt_ects: int
+    + zielnote: Decimal [0..1]
+    + verbleibende_tage()
+    + notendurchschnitt()
+    + ects_fortschritt()
+    + modul_hinzufuegen(modul, semesternummer)
+    + modul_aktualisieren(alter_code, modul, semesternummer): None
+  }
+
+  class Semester {
+    + nummer: int
+    + ist_fertig()
+  }
+
+  class Modul {
+    + modulcode: str
+    + bezeichnung: str
+    + ects: int
+    + status: Bearbeitungsstatus
+    + fortschritt(): Prozent
+  }
+
+  abstract class Pruefungsleistung {
+    + termin: date [0..1]
+    + note: Decimal [0..1]
+    + ergebnis: Pruefungsergebnis
+    + pruefungsform: Pruefungsform
+    {abstract} + fortschritt(): Prozent
+    + ist_bestanden(): bool
+  }
+
+  class EinteiligePruefungsleistung {
+    + fortschritt(): Prozent
+  }
+
+  class MehrteiligePruefungsleistung {
+    + anzahl_abschnitte: int
+    + aktueller_abschnitt: int [0..1]
+    + fortschritt(): Prozent
+  }
+
+  enum Pruefungsergebnis {
+    AUSSTEHEND
+    BESTANDEN
+    NICHT_BESTANDEN
+  }
+
+  enum Bearbeitungsstatus {
+    NOCH_ZU_TUN
+    IN_BEARBEITUNG
+    FERTIG
+  }
+
+  enum Pruefungsform {
+    KLAUSUR
+    FALLSTUDIE
+    PORTFOLIO
+    PROJEKTPRAESENTATION
+  }
+}
+
+' Programmstart und Oberfläche
+main ..> StudiengangDialog : erstellt die Fenster
+main ..> DashboardFenster : erstellt die Fenster
+DashboardFenster "1" *-- "1" Modulleiste
+DashboardFenster "1" *-- "0..*" ModulKarte
+DashboardFenster ..> ModulDialog : öffnet
+
+' Speicherabhängigkeiten
+' StudiengangDialog.accept() speichert mit sichern=True.
+' ModulDialog.accept() speichert eine geänderte Studiengang-Kopie und
+' übernimmt sie erst nach erfolgreichem Speichern.
+' DashboardFenster greift nicht direkt auf die Speicherung zu.
+StudiengangDialog ..> speicherung : speichern
+ModulDialog ..> speicherung : speichern
+main ..> speicherung : laden
+speicherung ..> Studiengang : serialisiert / rekonstruiert
+
+' Fachliche Komposition und Aggregation mit Multiplizitäten
+' modul_aktualisieren() ermöglicht den Wechsel eines Moduls ins Zielsemester.
+' /enddatum ergibt sich aus sechs Kalendermonaten je Semester.
+Studiengang "1" *-right- "0..*" Semester
+Semester "1" o-right- "0..*" Modul
+Modul "1" *-- "1" Pruefungsleistung
+
+' Vererbung der Prüfungsleistungen
+Pruefungsleistung <|-- EinteiligePruefungsleistung
+Pruefungsleistung <|-- MehrteiligePruefungsleistung
+
+' Abhängigkeiten von den Enums
+Modul ..> Bearbeitungsstatus
+Pruefungsleistung ..> Pruefungsergebnis
+Pruefungsleistung ..> Pruefungsform
+
+@enduml
